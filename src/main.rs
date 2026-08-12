@@ -1,8 +1,28 @@
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use grey_owl::{config::Config, output, validate, workspace::Workspace};
+
+const SKILL_NAME: &str = "growl";
+const SKILL_CONTENT: &str = include_str!("../skills/growl/SKILL.md");
+const CONFIG_NAME: &str = "growl.yml";
+const DEFAULT_CONFIG: &str = r#"common_fields:
+  id:
+    type: string
+  type:
+    type: string
+types:
+  note:
+    fields:
+      title:
+        type: string
+      status:
+        type: string
+        optional: true
+        values: [draft, active]
+"#;
 
 fn main() -> ExitCode {
     match run(env::args().skip(1).collect()) {
@@ -20,14 +40,36 @@ fn run(args: Vec<String>) -> Result<u8, String> {
         return Ok(0);
     }
 
-    if args[0] != "check" {
-        return Err(format!("unknown command '{}'; try 'growl --help'", args[0]));
+    match args[0].as_str() {
+        "check" => run_check(&args[1..]),
+        "init" => run_init(&args[1..]),
+        "skill" => run_skill(&args[1..]),
+        command => Err(format!("unknown command '{command}'; try 'growl --help'")),
+    }
+}
+
+fn run_init(args: &[String]) -> Result<u8, String> {
+    if !args.is_empty() {
+        return Err("usage: growl init".to_string());
     }
 
+    let config_path = PathBuf::from(CONFIG_NAME);
+    if config_path.exists() {
+        return Err(format!("configuration file already exists: {}", config_path.display()));
+    }
+
+    fs::write(&config_path, DEFAULT_CONFIG)
+        .map_err(|error| format!("cannot write configuration {}: {error}", config_path.display()))?;
+    println!("wrote {}", config_path.display());
+
+    Ok(0)
+}
+
+fn run_check(args: &[String]) -> Result<u8, String> {
     let mut wiki_path = None;
     let mut config_path = None;
     let mut format = output::OutputFormat::Human;
-    let mut index = 1;
+    let mut index = 0;
 
     while index < args.len() {
         match args[index].as_str() {
@@ -61,10 +103,28 @@ fn run(args: Vec<String>) -> Result<u8, String> {
     Ok(if diagnostics.iter().any(|diagnostic| diagnostic.is_error()) { 1 } else { 0 })
 }
 
+fn run_skill(args: &[String]) -> Result<u8, String> {
+    if args.len() != 1 || args[0] == "--help" || args[0] == "-h" {
+        return Err("usage: growl skill <output-directory>".to_string());
+    }
+
+    let output_directory = PathBuf::from(&args[0]);
+    let skill_directory = output_directory.join(SKILL_NAME);
+    fs::create_dir_all(&skill_directory)
+        .map_err(|error| format!("cannot create skill directory {}: {error}", skill_directory.display()))?;
+
+    let skill_path = skill_directory.join("SKILL.md");
+    fs::write(&skill_path, SKILL_CONTENT)
+        .map_err(|error| format!("cannot write skill {}: {error}", skill_path.display()))?;
+    println!("wrote {}", skill_path.display());
+
+    Ok(0)
+}
+
 fn print_help() {
     println!(
         "growl — Grey Owl wiki validator\n\n\
-Usage:\n  growl check <wiki-path> [--config <file>] [--format human|json]\n\n\
+Usage:\n  growl init\n  growl check <wiki-path> [--config <file>] [--format human|json]\n  growl skill <output-directory>\n\n\
 Options:\n  --config <file>       YAML configuration file\n  --format <format>     human (default) or json\n  -h, --help            Show this help"
     );
 }

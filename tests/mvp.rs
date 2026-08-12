@@ -13,7 +13,7 @@ fn fixture(name: &str) -> PathBuf {
 
 fn write_config(root: &Path) {
     fs::write(
-        root.join("grey-owl.yml"),
+        root.join("growl.yml"),
         r#"common_fields:
   id:
     type: string
@@ -39,7 +39,7 @@ fn run_check(root: &Path, format: &str) -> std::process::Output {
             "check",
             root.to_str().expect("fixture path should be utf-8"),
             "--config",
-            root.join("grey-owl.yml").to_str().expect("config path should be utf-8"),
+            root.join("growl.yml").to_str().expect("config path should be utf-8"),
             "--format",
             format,
         ])
@@ -89,5 +89,37 @@ fn duplicate_identifier_and_invalid_frontmatter_are_reported() {
     let codes: Vec<&str> = diagnostics.iter().filter_map(|diagnostic| diagnostic["code"].as_str()).collect();
     assert!(codes.contains(&"duplicate-identifier"));
     assert!(codes.contains(&"invalid-frontmatter"));
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn skill_command_writes_skill_file() {
+    let root = fixture("skill");
+    let output = Command::new(env!("CARGO_BIN_EXE_growl"))
+        .args(["skill", root.to_str().expect("fixture path should be utf-8")])
+        .output()
+        .expect("growl should run");
+
+    assert!(output.status.success());
+    let skill_path = root.join("growl/SKILL.md");
+    let skill = fs::read_to_string(&skill_path).expect("skill should be written");
+    assert!(skill.contains("# Grey Owl Wiki Skill"));
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn init_command_writes_default_config() {
+    let root = fixture("init");
+    let output =
+        Command::new(env!("CARGO_BIN_EXE_growl")).arg("init").current_dir(&root).output().expect("growl should run");
+
+    assert!(output.status.success());
+    let config = fs::read_to_string(root.join("growl.yml")).expect("config should be written");
+    assert!(config.contains("common_fields:"));
+    assert!(config.contains("types:"));
+
+    let second_output =
+        Command::new(env!("CARGO_BIN_EXE_growl")).arg("init").current_dir(&root).output().expect("growl should run");
+    assert_eq!(second_output.status.code(), Some(2));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
