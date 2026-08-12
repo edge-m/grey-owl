@@ -16,16 +16,24 @@ pub fn lint(scan: &ScanResult, config: &Config) -> Vec<Diagnostic> {
 
 fn lint_document(document: &Document, config: &Config) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
-    lint_fields(&document.path, &document.metadata, &config.common_fields, &mut diagnostics);
+    lint_fields(
+        &document.relative_file_path_from_wiki_root,
+        &document.frontmatter,
+        &config.common_fields,
+        &mut diagnostics,
+    );
 
-    if let Some(document_type) = document::string_value(&document.metadata, "type") {
+    if let Some(document_type) = document::string_value(&document.frontmatter, "type") {
         match config.types.get(&document_type) {
-            Some(type_config) => {
-                lint_fields(&document.path, &document.metadata, &type_config.fields, &mut diagnostics)
-            }
+            Some(type_config) => lint_fields(
+                &document.relative_file_path_from_wiki_root,
+                &document.frontmatter,
+                &type_config.fields,
+                &mut diagnostics,
+            ),
             None if !config.types.is_empty() => diagnostics.push(Diagnostic::error(
                 "unknown-document-type",
-                Some(document.path.clone()),
+                Some(document.relative_file_path_from_wiki_root.clone()),
                 format!("unknown document type '{document_type}'"),
             )),
             None => {}
@@ -36,10 +44,11 @@ fn lint_document(document: &Document, config: &Config) -> Vec<Diagnostic> {
 }
 
 fn lint_fields(
-    path: &str, metadata: &serde_yaml::Mapping, rules: &BTreeMap<String, FieldRule>, diagnostics: &mut Vec<Diagnostic>,
+    path: &str, frontmatter: &serde_yaml::Mapping, rules: &BTreeMap<String, FieldRule>,
+    diagnostics: &mut Vec<Diagnostic>,
 ) {
     for (field, rule) in rules {
-        match metadata.get(Value::String(field.clone())) {
+        match frontmatter.get(Value::String(field.clone())) {
             None if !rule.optional => diagnostics.push(Diagnostic::error(
                 "missing-required-field",
                 Some(path.to_string()),
@@ -86,12 +95,13 @@ fn lint_workspace(scan: &ScanResult) -> Vec<Diagnostic> {
     let mut identifiers = BTreeMap::<String, String>::new();
 
     for document in &scan.documents {
-        if let Some(identifier) = document::string_value(&document.metadata, "id")
-            && let Some(previous) = identifiers.insert(identifier.clone(), document.path.clone())
+        if let Some(identifier) = document::string_value(&document.frontmatter, "id")
+            && let Some(previous) =
+                identifiers.insert(identifier.clone(), document.relative_file_path_from_wiki_root.clone())
         {
             diagnostics.push(Diagnostic::error(
                 "duplicate-identifier",
-                Some(document.path.clone()),
+                Some(document.relative_file_path_from_wiki_root.clone()),
                 format!("identifier '{identifier}' is already used by {previous}"),
             ));
         }

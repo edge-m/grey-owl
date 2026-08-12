@@ -35,7 +35,7 @@ pub fn run(args: &Args) -> Result<u8, String> {
         Some(ref path) => Config::from_path(path)?,
         None => Config::default(),
     };
-    let config_diagnostics = validation::config_lint::lint(&loaded_config);
+    let config_diagnostics = validation::lint_config::lint(&loaded_config);
     if !config_diagnostics.is_empty() {
         output::print_diagnostics(&config_diagnostics, args.format.into())?;
         if config_diagnostics.iter().any(|diagnostic| diagnostic.is_error()) {
@@ -51,7 +51,7 @@ pub fn run(args: &Args) -> Result<u8, String> {
             .ok_or_else(|| "check requires a wiki path or a wiki_root in the configuration".to_string())?,
     };
     let scanned = Workspace::new(wiki_path).scan()?;
-    let diagnostics = validation::wiki_lint::lint(&scanned, &loaded_config);
+    let diagnostics = validation::lint_wiki::lint(&scanned, &loaded_config);
     output::print_diagnostics(&diagnostics, args.format.into())?;
 
     Ok(if diagnostics.iter().any(|diagnostic| diagnostic.is_error()) { 1 } else { 0 })
