@@ -4,18 +4,24 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-pub use schema::{ConfigLintConfig, DirectoryConfig, FieldRule, TypeConfig, ValueType, WikiLintConfig};
+pub use schema::{
+    ConfigLintConfig, DirectoryConfig, FieldRule, MandatoryFieldRule, TypeConfig, ValueType, WikiLintConfig,
+};
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Config {
     /// Wiki root, relative to the configuration file when it is not absolute.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub wiki_root: Option<PathBuf>,
     /// Directory roles keyed by their path relative to the wiki root.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub directories: BTreeMap<String, DirectoryConfig>,
-    pub common_fields: BTreeMap<String, FieldRule>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub mandatory_fields: BTreeMap<String, MandatoryFieldRule>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub types: BTreeMap<String, TypeConfig>,
     pub wiki_lint: WikiLintConfig,
     pub config_lint: ConfigLintConfig,
@@ -36,5 +42,18 @@ impl Config {
                 config_path.parent().unwrap_or_else(|| Path::new(".")).join(wiki_root)
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn optional_is_rejected_in_mandatory_fields() {
+        let result: Result<Config, _> =
+            serde_yaml::from_str("mandatory_fields:\n  title:\n    type: string\n    optional: true\n");
+
+        assert!(result.is_err());
     }
 }

@@ -1,8 +1,9 @@
 use std::collections::BTreeMap;
 
+use chrono::{DateTime, NaiveDate};
 use serde_yaml::Value;
 
-use crate::config::{Config, FieldRule, ValueType};
+use crate::config::{Config, FieldRule, MandatoryFieldRule, ValueType};
 use crate::diagnostic::Diagnostic;
 use crate::document::{self, Document};
 use crate::workspace::ScanResult;
@@ -16,10 +17,10 @@ pub fn lint(scan: &ScanResult, config: &Config) -> Vec<Diagnostic> {
 
 fn lint_document(document: &Document, config: &Config) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
-    lint_fields(
+    lint_mandatory_fields(
         &document.relative_file_path_from_wiki_root,
         &document.frontmatter,
-        &config.common_fields,
+        &config.mandatory_fields,
         &mut diagnostics,
     );
 
@@ -60,6 +61,22 @@ fn lint_fields(
     }
 }
 
+fn lint_mandatory_fields(
+    path: &str, frontmatter: &serde_yaml::Mapping, rules: &BTreeMap<String, MandatoryFieldRule>,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
+    for (field, rule) in rules {
+        match frontmatter.get(Value::String(field.clone())) {
+            None => diagnostics.push(Diagnostic::error(
+                "missing-required-field",
+                Some(path.to_string()),
+                format!("required field '{field}' is missing"),
+            )),
+            Some(value) => lint_mandatory_value(path, field, value, rule, diagnostics),
+        }
+    }
+}
+
 fn lint_value(path: &str, field: &str, value: &Value, rule: &FieldRule, diagnostics: &mut Vec<Diagnostic>) {
     if !matches_type(value, &rule.value_type) {
         diagnostics.push(Diagnostic::error(
@@ -67,9 +84,44 @@ fn lint_value(path: &str, field: &str, value: &Value, rule: &FieldRule, diagnost
             Some(path.to_string()),
             format!("field '{field}' has an invalid value type"),
         ));
+        return;
     }
-    if !rule.values.is_empty() {
-        let valid = value.as_str().is_some_and(|value| rule.values.iter().any(|allowed| allowed == value));
+    lint_allowed_values(path, field, value, &rule.values, diagnostics);
+    if let Some(item_rule) = &rule.items {
+        for item in value.as_sequence().into_iter().flatten() {
+            lint_value(path, field, item, item_rule, diagnostics);
+        }
+    }
+    if let Some(mapping) = value.as_mapping() {
+        lint_fields(&format!("{path}.{field}"), mapping, &rule.fields, diagnostics);
+    }
+}
+
+fn lint_mandatory_value(
+    path: &str, field: &str, value: &Value, rule: &MandatoryFieldRule, diagnostics: &mut Vec<Diagnostic>,
+) {
+    if !matches_type(value, &rule.value_type) {
+        diagnostics.push(Diagnostic::error(
+            "invalid-field-type",
+            Some(path.to_string()),
+            format!("field '{field}' has an invalid value type"),
+        ));
+        return;
+    }
+    lint_allowed_values(path, field, value, &rule.values, diagnostics);
+    if let Some(item_rule) = &rule.items {
+        for item in value.as_sequence().into_iter().flatten() {
+            lint_mandatory_value(path, field, item, item_rule, diagnostics);
+        }
+    }
+    if let Some(mapping) = value.as_mapping() {
+        lint_mandatory_fields(&format!("{path}.{field}"), mapping, &rule.fields, diagnostics);
+    }
+}
+
+fn lint_allowed_values(path: &str, field: &str, value: &Value, allowed: &[String], diagnostics: &mut Vec<Diagnostic>) {
+    if !allowed.is_empty() {
+        let valid = value.as_str().is_some_and(|value| allowed.iter().any(|allowed| allowed == value));
         if !valid {
             diagnostics.push(Diagnostic::error(
                 "invalid-field-value",
@@ -83,10 +135,37 @@ fn lint_value(path: &str, field: &str, value: &Value, rule: &FieldRule, diagnost
 fn matches_type(value: &Value, expected: &ValueType) -> bool {
     match expected {
         ValueType::String => value.is_string(),
+        ValueType::Date => value.as_str().is_some_and(is_valid_date),
+        ValueType::Datetime => value.as_str().is_some_and(is_valid_datetime),
         ValueType::Boolean => value.is_bool(),
         ValueType::Number => value.is_number(),
         ValueType::Array => value.is_sequence(),
         ValueType::Object => value.is_mapping(),
+    }
+}
+
+fn is_valid_date(value: &str) -> bool {
+    value.len() == 10
+        && NaiveDate::parse_from_str(value, "%Y-%m-%d")
+            .map(|date| date.format("%Y-%m-%d").to_string() == value)
+            .unwrap_or(false)
+}
+
+fn is_valid_datetime(value: &str) -> bool {
+    value.ends_with('Z') && DateTime::parse_from_rfc3339(value).is_ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn date_and_datetime_require_the_expected_formats() {
+        assert!(matches_type(&Value::String("2026-08-12".into()), &ValueType::Date));
+        assert!(!matches_type(&Value::String("2026-8-12".into()), &ValueType::Date));
+        assert!(matches_type(&Value::String("2026-08-12T10:30:00Z".into()), &ValueType::Datetime));
+        assert!(matches_type(&Value::String("2026-08-12T10:30:00.123Z".into()), &ValueType::Datetime));
+        assert!(!matches_type(&Value::String("2026-08-12T19:30:00+09:00".into()), &ValueType::Datetime));
     }
 }
 

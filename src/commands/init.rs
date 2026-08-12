@@ -1,41 +1,18 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
 use clap::Args as ClapArgs;
+use growl_core::config::{Config, ConfigLintConfig, DirectoryConfig, MandatoryFieldRule, TypeConfig, ValueType};
 
 const CONFIG_NAME: &str = "growl.yml";
-const DEFAULT_CONFIG: &str = r#"wiki_root: .
-
-directories:
-  raw:
-    description: Raw data source; files can be added here freely
-    directories:
-      inbox:
-        description: Incoming raw files
-
-common_fields:
-  id:
-    type: string
-  type:
-    type: string
-types:
-  note:
-    description: A general-purpose note
-    fields:
-      title:
-        type: string
-      status:
-        type: string
-        optional: true
-        values: [draft, active]
-
-wiki_lint: {}
-config_lint:
-  max_nesting_depth: 1
-"#;
 
 #[derive(Debug, ClapArgs)]
 pub struct Args {}
+
+fn mandatory_field(value_type: ValueType) -> MandatoryFieldRule {
+    MandatoryFieldRule { value_type, values: Vec::new(), items: None, fields: BTreeMap::new() }
+}
 
 pub fn run(_args: &Args) -> Result<u8, String> {
     let config_path = PathBuf::from(CONFIG_NAME);
@@ -43,7 +20,59 @@ pub fn run(_args: &Args) -> Result<u8, String> {
         return Err(format!("configuration file already exists: {}", config_path.display()));
     }
 
-    fs::write(&config_path, DEFAULT_CONFIG)
+    let config = Config {
+        wiki_root: Some(PathBuf::from(".")),
+        directories: BTreeMap::from([(
+            "raw".to_string(),
+            DirectoryConfig {
+                description: Some("Raw data source; files can be added here freely".to_string()),
+                directories: BTreeMap::from([(
+                    "inbox".to_string(),
+                    DirectoryConfig { description: Some("Incoming raw files".to_string()), ..Default::default() },
+                )]),
+            },
+        )]),
+        mandatory_fields: BTreeMap::from([
+            ("type".to_string(), mandatory_field(ValueType::String)),
+            ("title".to_string(), mandatory_field(ValueType::String)),
+            ("description".to_string(), mandatory_field(ValueType::String)),
+            (
+                "tags".to_string(),
+                MandatoryFieldRule {
+                    items: Some(Box::new(mandatory_field(ValueType::String))),
+                    ..mandatory_field(ValueType::Array)
+                },
+            ),
+            (
+                "sources".to_string(),
+                MandatoryFieldRule {
+                    items: Some(Box::new(mandatory_field(ValueType::String))),
+                    ..mandatory_field(ValueType::Array)
+                },
+            ),
+            (
+                "generated".to_string(),
+                MandatoryFieldRule {
+                    fields: BTreeMap::from([
+                        ("at".to_string(), mandatory_field(ValueType::Datetime)),
+                        ("by".to_string(), mandatory_field(ValueType::String)),
+                    ]),
+                    ..mandatory_field(ValueType::Object)
+                },
+            ),
+            ("stale_after".to_string(), mandatory_field(ValueType::Date)),
+        ]),
+        types: BTreeMap::from([(
+            "note".to_string(),
+            TypeConfig { description: Some("A general-purpose note".to_string()), fields: BTreeMap::new() },
+        )]),
+        config_lint: ConfigLintConfig { max_nesting_depth: Some(1) },
+        ..Default::default()
+    };
+    let content =
+        serde_yaml::to_string(&config).map_err(|error| format!("cannot serialize default configuration: {error}"))?;
+
+    fs::write(&config_path, content)
         .map_err(|error| format!("cannot write configuration {}: {error}", config_path.display()))?;
     println!("wrote {}", config_path.display());
 

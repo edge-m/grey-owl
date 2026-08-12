@@ -46,7 +46,7 @@ growl check . --config ./growl.yml --format json
 
 ## 設定
 
-生成される設定は、シンプルなYAMLスキーマです。`wiki_root`は設定ファイルからの相対パスとして解決され、`growl check`のWikiパスを省略した場合に使われます。`directories`では説明付きのディレクトリ構成をネストして定義できます。データソース用の`raw`にはファイルを自由に追加できます。typeには`description`で説明を書けます。`id`と`type`は予約フィールドです。`optional: true`がないフィールドは必須になります。
+生成される設定は、シンプルなYAMLスキーマです。`wiki_root`は設定ファイルからの相対パスとして解決され、`growl check`のWikiパスを省略した場合に使われます。`directories`では説明付きのディレクトリ構成をネストして定義できます。データソース用の`raw`にはファイルを自由に追加できます。`mandatory_fields`は全ドキュメントで必須となり、`optional: true`は指定できません。type固有のフィールドは、`optional: true`を指定しない限り必須です。配列の`items`やオブジェクトの`fields`で、値の構造をネストして定義できます。
 
 ```yaml
 wiki_root: .
@@ -58,22 +58,34 @@ directories:
       inbox:
         description: 取り込み前のファイル
 
-common_fields:
-  id:
-    type: string
+mandatory_fields:
   type:
     type: string
+  title:
+    type: string
+  description:
+    type: string
+  tags:
+    type: array
+    items:
+      type: string
+  sources:
+    type: array
+    items:
+      type: string
+  generated:
+    type: object
+    fields:
+      at:
+        type: datetime
+      by:
+        type: string
+  stale_after:
+    type: date
 
 types:
   note:
     description: 一般的なノート
-    fields:
-      title:
-        type: string
-      status:
-        type: string
-        optional: true
-        values: [draft, active]
 
 wiki_lint: {}
 config_lint:
@@ -81,7 +93,7 @@ config_lint:
 ```
 
 未知のfrontmatterフィールドは保持され、エラーにはなりません。ディレクトリ設定は説明専用で、ネストできます。設定したWikiルートを使う場合は`growl check --config ./growl.yml`を実行します。`--config`は設定ファイル自体のパス、`wiki_root`はその設定ファイル内で指定するWikiルートのパスです。
-`wiki_lint`にはWiki検証の設定、`config_lint`には設定ファイル自体を検証するための設定を記述します。ネストしたフィールドの対応では`config_lint.max_nesting_depth`を使用します。
+`wiki_lint`にはWiki検証の設定、`config_lint`には設定ファイル自体を検証するための設定を記述します。配列やオブジェクトのフィールドは、それぞれ`items`や`fields`でネストして定義できます。
 
 ## コマンド
 

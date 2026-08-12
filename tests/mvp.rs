@@ -14,7 +14,7 @@ fn fixture(name: &str) -> PathBuf {
 fn write_config(root: &Path) {
     fs::write(
         root.join("growl.yml"),
-        r#"common_fields:
+        r#"mandatory_fields:
   id:
     type: string
   type:
@@ -115,7 +115,7 @@ fn init_command_writes_default_config() {
 
     assert!(output.status.success());
     let config = fs::read_to_string(root.join("growl.yml")).expect("config should be written");
-    assert!(config.contains("common_fields:"));
+    assert!(config.contains("mandatory_fields:"));
     assert!(config.contains("wiki_root: ."));
     assert!(config.contains("directories:"));
     assert!(config.contains("description:"));
@@ -136,7 +136,7 @@ fn configured_root_and_nested_directories_are_supported() {
     fs::create_dir_all(root.join("wiki/raw/inbox")).expect("wiki directory should be created");
     fs::write(
         root.join("growl.yml"),
-        "wiki_root: wiki\ndirectories:\n  raw:\n    description: Raw source\n    directories:\n      inbox:\n        description: Incoming files\ncommon_fields:\n  id:\n    type: string\n  type:\n    type: string\ntypes:\n  note:\n    description: A note\n    fields: {}\n",
+        "wiki_root: wiki\ndirectories:\n  raw:\n    description: Raw source\n    directories:\n      inbox:\n        description: Incoming files\nmandatory_fields:\n  type:\n    type: string\ntypes:\n  note:\n    description: A note\n    fields: {}\n",
     )
     .expect("config should be written");
     fs::write(root.join("wiki/raw/inbox/wrong.md"), "---\nid: wrong\ntype: note\n---\n")
