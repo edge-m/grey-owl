@@ -4,6 +4,36 @@ use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 
+pub const CONFIG_NAME: &str = "growl.yml";
+
+pub fn default_config() -> &'static str {
+    r#"root: .
+
+directories:
+  raw:
+    description: Raw data source; files can be added here freely
+    directories:
+      inbox:
+        description: Incoming raw files
+
+common_fields:
+  id:
+    type: string
+  type:
+    type: string
+types:
+  note:
+    description: A general-purpose note
+    fields:
+      title:
+        type: string
+      status:
+        type: string
+        optional: true
+        values: [draft, active]
+"#
+}
+
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
 pub struct Config {
