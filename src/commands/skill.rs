@@ -1,16 +1,19 @@
 use std::fs;
 use std::path::PathBuf;
 
+use clap::Args as ClapArgs;
+
 const SKILL_NAME: &str = "growl";
 const SKILL_CONTENT: &str = include_str!("../../skills/growl/SKILL.md");
 
-pub fn run(args: &[String]) -> Result<u8, String> {
-    if args.len() != 1 || args[0] == "--help" || args[0] == "-h" {
-        return Err("usage: growl skill <output-directory>".to_string());
-    }
+#[derive(Debug, ClapArgs)]
+pub struct Args {
+    #[arg(help = "Directory where the Skill should be written")]
+    pub output_directory: PathBuf,
+}
 
-    let output_directory = PathBuf::from(&args[0]);
-    let skill_directory = output_directory.join(SKILL_NAME);
+pub fn run(args: &Args) -> Result<u8, String> {
+    let skill_directory = args.output_directory.join(SKILL_NAME);
     fs::create_dir_all(&skill_directory)
         .map_err(|error| format!("cannot create skill directory {}: {error}", skill_directory.display()))?;
 

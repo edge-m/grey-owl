@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::diagnostic::Diagnostic;
+use growl_core::diagnostic::Diagnostic;
 
 #[derive(Clone, Copy)]
 pub enum OutputFormat {

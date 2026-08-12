@@ -1,7 +1,11 @@
 use std::process::ExitCode;
 
+mod cli;
+mod commands;
+mod output;
+
 fn main() -> ExitCode {
-    match grey_owl::cli::run(std::env::args().skip(1).collect()) {
+    match cli::run(std::env::args().skip(1).collect()) {
         Ok(code) => ExitCode::from(code),
         Err(message) => {
             eprintln!("growl: {message}");

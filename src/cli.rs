@@ -1,23 +1,45 @@
+use clap::{CommandFactory, Parser, Subcommand};
+
 use crate::commands::{check, init, skill};
 
-pub fn run(args: Vec<String>) -> Result<u8, String> {
-    if args.is_empty() || args[0] == "--help" || args[0] == "-h" {
-        print_help();
-        return Ok(0);
-    }
+#[derive(Debug, Parser)]
+#[command(name = "growl", about = "Grey Owl wiki validator")]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+}
 
-    match args[0].as_str() {
-        "check" => check::run(&args[1..]),
-        "init" => init::run(&args[1..]),
-        "skill" => skill::run(&args[1..]),
-        command => Err(format!("unknown command '{command}'; try 'growl --help'")),
+#[derive(Debug, Subcommand)]
+enum Command {
+    #[command(about = "Validate a wiki")]
+    Check(check::Args),
+    #[command(about = "Create a starter configuration")]
+    Init(init::Args),
+    #[command(about = "Write the Grey Owl Agent Skill")]
+    Skill(skill::Args),
+}
+
+pub fn run(args: Vec<String>) -> Result<u8, String> {
+    let cli = match Cli::try_parse_from(std::iter::once("growl".to_string()).chain(args)) {
+        Ok(cli) => cli,
+        Err(error) => {
+            let exit_code = error.exit_code();
+            error.print().map_err(|error| format!("cannot print CLI error: {error}"))?;
+            return Ok(exit_code as u8);
+        }
+    };
+
+    match cli.command {
+        Some(Command::Check(args)) => check::run(&args),
+        Some(Command::Init(args)) => init::run(&args),
+        Some(Command::Skill(args)) => skill::run(&args),
+        None => {
+            print_help();
+            Ok(0)
+        }
     }
 }
 
 fn print_help() {
-    println!(
-        "growl — Grey Owl wiki validator\n\n\
-Usage:\n  growl init\n  growl check [<wiki-path>] [--config <file>] [--format human|json]\n  growl skill <output-directory>\n\n\
-Options:\n  --config <file>       YAML configuration file\n  --format <format>     human (default) or json\n  -h, --help            Show this help"
-    );
+    println!("{}", Cli::command().render_help());
 }
