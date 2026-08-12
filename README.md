@@ -1,13 +1,59 @@
-# growl
+# Grey Owl
 
-`growl` is a wiki linter for Open Knowledge Format (OKF).
+Grey Owl is a fast, configuration-driven validator for structured Markdown
+wikis. It checks YAML frontmatter and reports actionable diagnostics in human-
+readable or JSON form.
 
-The repository is named `owl` to avoid a name collision. The project name is based on
-**OWL** (**O**KF **W**iki **L**inter), while the command is named `growl`.
+The project and library are named `grey-owl`; `growl` is the CLI binary.
 
-## MVP usage
+## Why Grey Owl?
 
-Create a YAML configuration file such as:
+The name comes from **OWL** — **O**KF **W**iki **L**inter. Grey Owl started
+with Open Knowledge Format (OKF) wiki conventions, but its data model and
+validation rules are intentionally not tied to OKF or any particular wiki
+product.
+
+## What it does
+
+- Recursively scans Markdown files below a wiki root
+- Parses YAML frontmatter
+- Validates required fields, document types, value types, and allowed values
+- Detects missing and duplicate identifiers
+- Reports diagnostics as human-readable text or JSON
+- Provides stable exit codes for scripts and CI
+- Generates a starter configuration and an Agent Skill
+
+Markdown body text is treated as opaque content; Grey Owl does not judge its
+meaning or writing quality.
+
+## Quick start
+
+Install the current checkout locally:
+
+```sh
+make dev-install
+```
+
+Create a configuration in your wiki directory:
+
+```sh
+cd path/to/wiki
+growl init
+```
+
+Validate the wiki:
+
+```sh
+growl check . --config ./growl.yml
+growl check . --config ./growl.yml --format json
+```
+
+`growl init` creates `growl.yml` and never overwrites an existing file.
+
+## Configuration
+
+The generated configuration is a small YAML schema. `id` and `type` are
+reserved fields. Fields without `optional: true` are required.
 
 ```yaml
 common_fields:
@@ -15,6 +61,7 @@ common_fields:
     type: string
   type:
     type: string
+
 types:
   note:
     fields:
@@ -26,41 +73,44 @@ types:
         values: [draft, active]
 ```
 
-Then validate a wiki:
+Unknown frontmatter fields are preserved and do not produce an error. The
+current implementation reads YAML configuration explicitly supplied with
+`--config`; configuration discovery is not automatic.
 
-```sh
-growl check ./wiki --config ./growl.yml
-growl check ./wiki --config ./growl.yml --format json
-```
+## Commands
 
-新しいWikiの設定ファイルを作成するには、Wikiのルートで実行します。
-
-```sh
+```text
 growl init
+growl check <wiki-path> [--config <file>] [--format human|json]
+growl skill <output-directory>
 ```
 
-カレントディレクトリに `growl.yml` が生成されます。既存の設定ファイルは上書きしません。
+`growl skill` writes the static Agent Skill to:
 
-The MVP checks YAML frontmatter, required fields, document types, configured field
-types and values, and duplicate identifiers. Markdown body text is not semantically
-evaluated.
+```text
+<output-directory>/growl/SKILL.md
+```
+
+Exit codes:
+
+- `0` — validation completed without errors
+- `1` — validation completed and found errors
+- `2` — the command could not run because of invalid arguments, configuration,
+  or I/O
 
 ## Development
 
-```sh
-cargo run
-cargo test
-cargo fmt --check
-cargo clippy --all-targets --all-features -- -D warnings
-```
-
-Agent向けSkillを指定ディレクトリへ出力するには、次を実行します。
+The project uses stable Rust. From the repository root:
 
 ```sh
-growl skill /path/to/skills
+make format-check
+make lint
+make test
 ```
 
-`/path/to/skills/growl/SKILL.md` が生成されます。
+Other useful targets are `make build`, `make check`, `make format`, and
+`make dev-install`. See [AGENTS.md](AGENTS.md) for repository contribution and
+verification rules.
 
-プロジェクトではstable Rust（現在の検証環境では1.95.0）を使用し、
-`cargo check-all` と `cargo test-all` を検証用のショートカットとして利用できます。
+The Japanese README is available at
+[`docs/i18n/README.ja.md`](docs/i18n/README.ja.md).
