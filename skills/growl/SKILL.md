@@ -6,15 +6,18 @@ maintaining wiki documents.
 
 ## Start every task by reading the wiki guidance
 
-Before changing a wiki, inspect these files when they exist:
+Before changing a wiki, run these commands to obtain current information:
 
-1. `.grey-owl/agent-guide.md` for wiki-specific rules and conventions.
-2. `.grey-owl/schema.json` for document types, fields, relationships, and
-   placement rules.
-3. `.grey-owl/diagnostics.json` for the latest validation results.
+1. Run `growl schema <wiki-path> --format text` or `--format json` for the
+   current document types, fields, relationships, and placement rules.
+2. Run `growl check <wiki-path> --format json` for current diagnostics.
+
+Do not treat saved schema or diagnostics files as authoritative. If output is
+saved for debugging or review, treat it as a cache or snapshot because it may
+be stale after the wiki or configuration changes.
 
 Do not guess a document type, field, identifier rule, or relationship when the
-wiki guidance does not define it. Look for an existing document with the same
+schema output does not define it. Look for an existing document with the same
 kind and ask for clarification when the intended structure remains unclear.
 
 ## Validation
