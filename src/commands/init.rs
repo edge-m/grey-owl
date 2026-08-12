@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use clap::Args as ClapArgs;
 
 const CONFIG_NAME: &str = "growl.yml";
-const DEFAULT_CONFIG: &str = r#"root: .
+const DEFAULT_CONFIG: &str = r#"wiki_root: .
 
 directories:
   raw:
@@ -28,6 +28,10 @@ types:
         type: string
         optional: true
         values: [draft, active]
+
+wiki_lint: {}
+config_lint:
+  max_nesting_depth: 1
 "#;
 
 #[derive(Debug, ClapArgs)]

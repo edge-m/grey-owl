@@ -35,16 +35,23 @@ pub fn run(args: &Args) -> Result<u8, String> {
         Some(ref path) => Config::from_path(path)?,
         None => Config::default(),
     };
+    let config_diagnostics = validation::config_lint::lint(&loaded_config);
+    if !config_diagnostics.is_empty() {
+        output::print_diagnostics(&config_diagnostics, args.format.into())?;
+        if config_diagnostics.iter().any(|diagnostic| diagnostic.is_error()) {
+            return Ok(2);
+        }
+    }
     let wiki_path = match &args.wiki_path {
         Some(path) => path.clone(),
         None => args
             .config
             .as_deref()
-            .and_then(|path| loaded_config.root_path(path))
-            .ok_or_else(|| "check requires a wiki path or a root in the configuration".to_string())?,
+            .and_then(|path| loaded_config.wiki_root_path(path))
+            .ok_or_else(|| "check requires a wiki path or a wiki_root in the configuration".to_string())?,
     };
     let scanned = Workspace::new(wiki_path).scan()?;
-    let diagnostics = validation::validate(&scanned, &loaded_config);
+    let diagnostics = validation::wiki_lint::lint(&scanned, &loaded_config);
     output::print_diagnostics(&diagnostics, args.format.into())?;
 
     Ok(if diagnostics.iter().any(|diagnostic| diagnostic.is_error()) { 1 } else { 0 })

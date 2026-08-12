@@ -116,10 +116,13 @@ fn init_command_writes_default_config() {
     assert!(output.status.success());
     let config = fs::read_to_string(root.join("growl.yml")).expect("config should be written");
     assert!(config.contains("common_fields:"));
-    assert!(config.contains("root: ."));
+    assert!(config.contains("wiki_root: ."));
     assert!(config.contains("directories:"));
     assert!(config.contains("description:"));
     assert!(config.contains("types:"));
+    assert!(config.contains("wiki_lint:"));
+    assert!(config.contains("config_lint:"));
+    assert!(config.contains("max_nesting_depth: 1"));
 
     let second_output =
         Command::new(env!("CARGO_BIN_EXE_growl")).arg("init").current_dir(&root).output().expect("growl should run");
@@ -133,7 +136,7 @@ fn configured_root_and_nested_directories_are_supported() {
     fs::create_dir_all(root.join("wiki/raw/inbox")).expect("wiki directory should be created");
     fs::write(
         root.join("growl.yml"),
-        "root: wiki\ndirectories:\n  raw:\n    description: Raw source\n    directories:\n      inbox:\n        description: Incoming files\ncommon_fields:\n  id:\n    type: string\n  type:\n    type: string\ntypes:\n  note:\n    description: A note\n    fields: {}\n",
+        "wiki_root: wiki\ndirectories:\n  raw:\n    description: Raw source\n    directories:\n      inbox:\n        description: Incoming files\ncommon_fields:\n  id:\n    type: string\n  type:\n    type: string\ntypes:\n  note:\n    description: A note\n    fields: {}\n",
     )
     .expect("config should be written");
     fs::write(root.join("wiki/raw/inbox/wrong.md"), "---\nid: wrong\ntype: note\n---\n")

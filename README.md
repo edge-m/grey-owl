@@ -52,7 +52,7 @@ growl check . --config ./growl.yml --format json
 
 ## Configuration
 
-The generated configuration is a small YAML schema. `root` is resolved
+The generated configuration is a small YAML schema. `wiki_root` is resolved
 relative to the configuration file and is used when the wiki path is omitted
 from `growl check`. `directories` describes the directory structure with
 nestable descriptions. The `raw` directory can be used as a data source where
@@ -61,7 +61,7 @@ files are added freely. Type descriptions can be written with `description`.
 required.
 
 ```yaml
-root: .
+wiki_root: .
 
 directories:
   raw:
@@ -86,12 +86,19 @@ types:
         type: string
         optional: true
         values: [draft, active]
+
+wiki_lint: {}
+config_lint:
+  max_nesting_depth: 1
 ```
 
 Unknown frontmatter fields are preserved and do not produce an error. Directory
-entries are descriptive only and may be nested. To use the configured root,
+entries are descriptive only and may be nested. To use the configured wiki root,
 run `growl check --config ./growl.yml`; `--config` is the path to the
-configuration file, while `root` is the path inside that configuration.
+configuration file, while `wiki_root` is the path inside that configuration.
+`wiki_lint` contains wiki validation settings, while `config_lint` contains
+settings for validating the configuration schema itself. Nested field support
+uses `config_lint.max_nesting_depth`.
 
 ## Commands
 
