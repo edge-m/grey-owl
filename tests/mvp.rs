@@ -116,10 +116,41 @@ fn init_command_writes_default_config() {
     assert!(output.status.success());
     let config = fs::read_to_string(root.join("growl.yml")).expect("config should be written");
     assert!(config.contains("common_fields:"));
+    assert!(config.contains("root: ."));
+    assert!(config.contains("directories:"));
+    assert!(config.contains("description:"));
     assert!(config.contains("types:"));
 
     let second_output =
         Command::new(env!("CARGO_BIN_EXE_growl")).arg("init").current_dir(&root).output().expect("growl should run");
     assert_eq!(second_output.status.code(), Some(2));
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn configured_root_and_nested_directories_are_supported() {
+    let root = fixture("configured-root");
+    fs::create_dir_all(root.join("wiki/raw/inbox")).expect("wiki directory should be created");
+    fs::write(
+        root.join("growl.yml"),
+        "root: wiki\ndirectories:\n  raw:\n    description: Raw source\n    directories:\n      inbox:\n        description: Incoming files\ncommon_fields:\n  id:\n    type: string\n  type:\n    type: string\ntypes:\n  note:\n    description: A note\n    fields: {}\n",
+    )
+    .expect("config should be written");
+    fs::write(root.join("wiki/raw/inbox/wrong.md"), "---\nid: wrong\ntype: note\n---\n")
+        .expect("document should be written");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_growl"))
+        .args([
+            "check",
+            "--config",
+            root.join("growl.yml").to_str().expect("path should be utf-8"),
+            "--format",
+            "json",
+        ])
+        .output()
+        .expect("growl should run");
+    assert!(output.status.success());
+    let diagnostics: Vec<serde_json::Value> = serde_json::from_slice(&output.stdout).expect("valid JSON");
+    assert!(diagnostics.is_empty());
     fs::remove_dir_all(root).expect("fixture should be removed");
 }

@@ -8,13 +8,23 @@ use grey_owl::{config::Config, output, validate, workspace::Workspace};
 const SKILL_NAME: &str = "growl";
 const SKILL_CONTENT: &str = include_str!("../skills/growl/SKILL.md");
 const CONFIG_NAME: &str = "growl.yml";
-const DEFAULT_CONFIG: &str = r#"common_fields:
+const DEFAULT_CONFIG: &str = r#"root: .
+
+directories:
+  raw:
+    description: Raw data source; files can be added here freely
+    directories:
+      inbox:
+        description: Incoming raw files
+
+common_fields:
   id:
     type: string
   type:
     type: string
 types:
   note:
+    description: A general-purpose note
     fields:
       title:
         type: string
@@ -91,10 +101,16 @@ fn run_check(args: &[String]) -> Result<u8, String> {
         index += 1;
     }
 
-    let wiki_path = wiki_path.ok_or_else(|| "check requires a wiki path".to_string())?;
     let config = match config_path {
-        Some(path) => Config::from_path(&path)?,
+        Some(ref path) => Config::from_path(path)?,
         None => Config::default(),
+    };
+    let wiki_path = match wiki_path {
+        Some(path) => path,
+        None => config_path
+            .as_deref()
+            .and_then(|path| config.root_path(path))
+            .ok_or_else(|| "check requires a wiki path or a root in the configuration".to_string())?,
     };
     let scanned = Workspace::new(wiki_path).scan()?;
     let diagnostics = validate::validate(&scanned, &config);
@@ -124,7 +140,7 @@ fn run_skill(args: &[String]) -> Result<u8, String> {
 fn print_help() {
     println!(
         "growl — Grey Owl wiki validator\n\n\
-Usage:\n  growl init\n  growl check <wiki-path> [--config <file>] [--format human|json]\n  growl skill <output-directory>\n\n\
+Usage:\n  growl init\n  growl check [<wiki-path>] [--config <file>] [--format human|json]\n  growl skill <output-directory>\n\n\
 Options:\n  --config <file>       YAML configuration file\n  --format <format>     human (default) or json\n  -h, --help            Show this help"
     );
 }

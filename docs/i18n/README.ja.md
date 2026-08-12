@@ -46,9 +46,18 @@ growl check . --config ./growl.yml --format json
 
 ## 設定
 
-生成される設定は、シンプルなYAMLスキーマです。`id`と`type`は予約フィールドです。`optional: true`がないフィールドは必須になります。
+生成される設定は、シンプルなYAMLスキーマです。`root`は設定ファイルからの相対パスとして解決され、`growl check`のWikiパスを省略した場合に使われます。`directories`では説明付きのディレクトリ構成をネストして定義できます。データソース用の`raw`にはファイルを自由に追加できます。typeには`description`で説明を書けます。`id`と`type`は予約フィールドです。`optional: true`がないフィールドは必須になります。
 
 ```yaml
+root: .
+
+directories:
+  raw:
+    description: データソース。ファイルを自由に追加
+    directories:
+      inbox:
+        description: 取り込み前のファイル
+
 common_fields:
   id:
     type: string
@@ -57,6 +66,7 @@ common_fields:
 
 types:
   note:
+    description: 一般的なノート
     fields:
       title:
         type: string
@@ -66,13 +76,13 @@ types:
         values: [draft, active]
 ```
 
-未知のfrontmatterフィールドは保持され、エラーにはなりません。現在の実装では、設定ファイルは`--config`で明示的に指定する必要があり、自動探索は行いません。
+未知のfrontmatterフィールドは保持され、エラーにはなりません。ディレクトリ設定は説明専用で、ネストできます。設定したルートを使う場合は`growl check --config ./growl.yml`を実行します。`--config`は設定ファイル自体のパス、`root`はその設定ファイル内で指定するWikiルートのパスです。
 
 ## コマンド
 
 ```text
 growl init
-growl check <wiki-path> [--config <file>] [--format human|json]
+growl check [<wiki-path>] [--config <file>] [--format human|json]
 growl skill <output-directory>
 ```
 

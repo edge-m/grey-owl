@@ -52,10 +52,24 @@ growl check . --config ./growl.yml --format json
 
 ## Configuration
 
-The generated configuration is a small YAML schema. `id` and `type` are
-reserved fields. Fields without `optional: true` are required.
+The generated configuration is a small YAML schema. `root` is resolved
+relative to the configuration file and is used when the wiki path is omitted
+from `growl check`. `directories` describes the directory structure with
+nestable descriptions. The `raw` directory can be used as a data source where
+files are added freely. Type descriptions can be written with `description`.
+`id` and `type` are reserved fields. Fields without `optional: true` are
+required.
 
 ```yaml
+root: .
+
+directories:
+  raw:
+    description: Raw data source; files can be added here freely
+    directories:
+      inbox:
+        description: Incoming raw files
+
 common_fields:
   id:
     type: string
@@ -64,6 +78,7 @@ common_fields:
 
 types:
   note:
+    description: A general-purpose note
     fields:
       title:
         type: string
@@ -73,15 +88,16 @@ types:
         values: [draft, active]
 ```
 
-Unknown frontmatter fields are preserved and do not produce an error. The
-current implementation reads YAML configuration explicitly supplied with
-`--config`; configuration discovery is not automatic.
+Unknown frontmatter fields are preserved and do not produce an error. Directory
+entries are descriptive only and may be nested. To use the configured root,
+run `growl check --config ./growl.yml`; `--config` is the path to the
+configuration file, while `root` is the path inside that configuration.
 
 ## Commands
 
 ```text
 growl init
-growl check <wiki-path> [--config <file>] [--format human|json]
+growl check [<wiki-path>] [--config <file>] [--format human|json]
 growl skill <output-directory>
 ```
 
