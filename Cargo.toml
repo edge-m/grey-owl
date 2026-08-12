@@ -15,5 +15,6 @@ path = "src/main.rs"
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 growl_core = { path = "crates/growl_core" }
+indexmap = { version = "2", features = ["serde"] }
 serde_json = "1"
 serde_yaml = "0.9"

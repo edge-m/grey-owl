@@ -1,7 +1,6 @@
-use std::collections::BTreeMap;
-
 use crate::config::{Config, FieldRule, MandatoryFieldRule, ValueType};
 use crate::diagnostic::Diagnostic;
+use indexmap::IndexMap;
 
 pub fn lint(config: &Config) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
@@ -15,7 +14,7 @@ pub fn lint(config: &Config) -> Vec<Diagnostic> {
 }
 
 fn lint_mandatory_fields(
-    scope: &str, fields: &BTreeMap<String, MandatoryFieldRule>, diagnostics: &mut Vec<Diagnostic>,
+    scope: &str, fields: &IndexMap<String, MandatoryFieldRule>, diagnostics: &mut Vec<Diagnostic>,
 ) {
     for (field, rule) in fields {
         let field_scope = format!("{scope}.{field}");
@@ -31,7 +30,7 @@ fn lint_mandatory_rule(scope: &str, rule: &MandatoryFieldRule, diagnostics: &mut
     lint_mandatory_fields(&format!("{scope}.fields"), &rule.fields, diagnostics);
 }
 
-fn lint_fields(scope: &str, fields: &BTreeMap<String, FieldRule>, diagnostics: &mut Vec<Diagnostic>) {
+fn lint_fields(scope: &str, fields: &IndexMap<String, FieldRule>, diagnostics: &mut Vec<Diagnostic>) {
     for (field, rule) in fields {
         let field_scope = format!("{scope}.{field}");
         lint_rule(&field_scope, rule, diagnostics);
@@ -84,14 +83,16 @@ mod tests {
             "tags".to_string(),
             MandatoryFieldRule {
                 value_type: ValueType::Array,
+                description: None,
                 values: Vec::new(),
                 items: Some(Box::new(MandatoryFieldRule {
                     value_type: ValueType::String,
+                    description: None,
                     values: Vec::new(),
                     items: None,
-                    fields: BTreeMap::new(),
+                    fields: IndexMap::new(),
                 })),
-                fields: BTreeMap::new(),
+                fields: IndexMap::new(),
             },
         );
 

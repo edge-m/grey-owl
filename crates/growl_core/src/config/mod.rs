@@ -1,9 +1,9 @@
 mod schema;
 
-use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 pub use schema::{
@@ -17,12 +17,12 @@ pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wiki_root: Option<PathBuf>,
     /// Directory roles keyed by their path relative to the wiki root.
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub directories: BTreeMap<String, DirectoryConfig>,
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub mandatory_fields: BTreeMap<String, MandatoryFieldRule>,
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub types: BTreeMap<String, TypeConfig>,
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    pub directories: IndexMap<String, DirectoryConfig>,
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    pub mandatory_fields: IndexMap<String, MandatoryFieldRule>,
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    pub types: IndexMap<String, TypeConfig>,
     pub wiki_lint: WikiLintConfig,
     pub config_lint: ConfigLintConfig,
 }

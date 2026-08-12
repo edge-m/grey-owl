@@ -1,5 +1,4 @@
-use std::collections::BTreeMap;
-
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -18,8 +17,8 @@ pub struct ConfigLintConfig {
 pub struct DirectoryConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub directories: BTreeMap<String, DirectoryConfig>,
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    pub directories: IndexMap<String, DirectoryConfig>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -27,8 +26,8 @@ pub struct DirectoryConfig {
 pub struct TypeConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub fields: BTreeMap<String, FieldRule>,
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    pub fields: IndexMap<String, FieldRule>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -36,26 +35,30 @@ pub struct TypeConfig {
 pub struct MandatoryFieldRule {
     #[serde(rename = "type")]
     pub value_type: ValueType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub items: Option<Box<MandatoryFieldRule>>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub fields: BTreeMap<String, MandatoryFieldRule>,
+    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+    pub fields: IndexMap<String, MandatoryFieldRule>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FieldRule {
     #[serde(rename = "type")]
     pub value_type: ValueType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     #[serde(default, skip_serializing_if = "is_false")]
     pub optional: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub items: Option<Box<FieldRule>>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub fields: BTreeMap<String, FieldRule>,
+    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+    pub fields: IndexMap<String, FieldRule>,
 }
 
 fn is_false(value: &bool) -> bool {

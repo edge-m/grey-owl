@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use chrono::{DateTime, NaiveDate};
+use indexmap::IndexMap;
 use serde_yaml::Value;
 
 use crate::config::{Config, FieldRule, MandatoryFieldRule, ValueType};
@@ -45,7 +46,7 @@ fn lint_document(document: &Document, config: &Config) -> Vec<Diagnostic> {
 }
 
 fn lint_fields(
-    path: &str, frontmatter: &serde_yaml::Mapping, rules: &BTreeMap<String, FieldRule>,
+    path: &str, frontmatter: &serde_yaml::Mapping, rules: &IndexMap<String, FieldRule>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
     for (field, rule) in rules {
@@ -62,7 +63,7 @@ fn lint_fields(
 }
 
 fn lint_mandatory_fields(
-    path: &str, frontmatter: &serde_yaml::Mapping, rules: &BTreeMap<String, MandatoryFieldRule>,
+    path: &str, frontmatter: &serde_yaml::Mapping, rules: &IndexMap<String, MandatoryFieldRule>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
     for (field, rule) in rules {

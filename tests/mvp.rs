@@ -123,6 +123,25 @@ fn init_command_writes_default_config() {
     assert!(config.contains("wiki_lint:"));
     assert!(config.contains("config_lint:"));
     assert!(config.contains("max_nesting_depth: 1"));
+    assert!(config.contains("# Wiki root path, used when the path is omitted from `growl check`.\nwiki_root:"));
+    assert!(config.contains("\n\n# Directory structure and descriptions.\ndirectories:"));
+    assert!(config.contains("\n\n# Fields required on every document.\nmandatory_fields:"));
+    let mandatory_fields = config.split("mandatory_fields:").nth(1).expect("mandatory fields should be written");
+    let field_order = ["type:", "title:", "description:", "tags:", "sources:", "generated:", "stale_after:"];
+    let mut previous = 0;
+    for field in field_order {
+        let position = mandatory_fields
+            .lines()
+            .scan(0, |offset, line| {
+                let current = *offset;
+                *offset += line.len() + 1;
+                Some((current, line))
+            })
+            .find_map(|(position, line)| (line == format!("  {field}")).then_some(position))
+            .expect("default field should be written");
+        assert!(position >= previous, "field {field} is out of order");
+        previous = position;
+    }
 
     let second_output =
         Command::new(env!("CARGO_BIN_EXE_growl")).arg("init").current_dir(&root).output().expect("growl should run");
