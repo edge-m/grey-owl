@@ -119,6 +119,10 @@ object fields use `items` and `fields` respectively.
 
 ```text
 growl init
+growl config lint [--config <file>] [--format human|json]
+growl graph [--config <file>]
+growl schema [--config <file>] [--format text|json]
+growl maintain [--config <file>] [--stale-before YYYY-MM-DD] [--dry-run] [--format human|json]
 growl overview directories [--config <file>] [--statistics]
 growl overview types [--config <file>] [--statistics] [--type <type>]
 growl search [--config <file>] --query <query>
@@ -167,3 +171,10 @@ verification rules.
 
 The Japanese README is available at
 [`docs/i18n/README.ja.md`](docs/i18n/README.ja.md).
+
+## Build profiles
+
+Development builds use 128 codegen units to keep rebuilds responsive. Release
+builds use maximum link-time optimization (`lto = true`), `opt-level = 3`, and
+a single codegen unit for the best runtime optimization. The release profile
+does not alter stripping or panic behavior.

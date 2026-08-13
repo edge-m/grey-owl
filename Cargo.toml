@@ -18,11 +18,20 @@ version = "0.1.0"
 edition = "2024"
 description = "A wiki linter for Open Knowledge Format (OKF)"
 
+[profile.dev]
+codegen-units = 128
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
 [[bin]]
 name = "growl"
 path = "src/main.rs"
 
 [dependencies]
+chrono = { workspace = true }
 clap = { workspace = true }
 growl_core = { workspace = true }
 indexmap = { workspace = true }

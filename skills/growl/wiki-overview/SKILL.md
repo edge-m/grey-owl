@@ -1,11 +1,16 @@
 # Grey Owl Wiki Overview Skill
 
-Wikiの全体像を取得するためのSkillです。プロジェクト構造、ページ数、ページの基本的な分類、検証状態などを把握することを目的とします。
+Use this workflow to understand the wiki structure, document types, page
+counts, relationships, and current validation state.
 
-## TODO
+## Workflow
 
-- [ ] Wikiルートと設定ファイルを確認する手順を定義する
-- [ ] ディレクトリ構造の取得方法を定義する
-- [ ] ページ数・type数・主要フィールドの集計方法を定義する
-- [ ] リンクや検証エラーを概要に含めるか決める
-- [ ] human / JSONの出力形式を定義する
+1. Run `growl schema --format json` to obtain the wiki root, configured types,
+   fields, directory roles, and configuration diagnostics.
+2. Run `growl overview directories --statistics` and
+   `growl overview types --statistics` to collect actual page counts.
+3. Run `growl graph` to inspect links, broken references, orphan pages, and
+   unreachable pages.
+4. Run `growl check --format json` and report the current validation state.
+
+Do not infer missing configuration from directory names or page content.

@@ -99,6 +99,10 @@ config_lint:
 
 ```text
 growl init
+growl config lint [--config <file>] [--format human|json]
+growl graph [--config <file>]
+growl schema [--config <file>] [--format text|json]
+growl maintain [--config <file>] [--stale-before YYYY-MM-DD] [--dry-run] [--format human|json]
 growl overview directories [--config <file>] [--statistics]
 growl overview types [--config <file>] [--statistics] [--type <type>]
 growl search [--config <file>] --query <query>
@@ -142,3 +146,7 @@ make test
 その他のターゲットとして`make build`、`make check`、`make format`、`make dev-install`があります。コントリビューションと検証のルールは[AGENTS.md](../../AGENTS.md)を参照してください。
 
 英語版の一次READMEは[README.md](../../README.md)です。ユーザー向け情報を変更する場合は、英語版とこの日本語版を同期してください。
+
+## ビルドプロファイル
+
+開発ビルドでは再ビルドを高速にするため、codegen unitを128に設定しています。リリースビルドでは実行時の最適化を最大化するため、最大LTO（`lto = true`）、`opt-level = 3`、codegen unitを1に設定しています。リリースプロファイルではstripとpanicの動作は変更しません。

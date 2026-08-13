@@ -1,11 +1,16 @@
 # Grey Owl Wiki Maintenance Skill
 
-Wikiのメンテナンス状態を確認するためのSkillです。現時点では、主に `growl check` を実行し、検証エラーや警告を整理して報告することを目的とします。
+Use this workflow to find and assess maintenance candidates without changing
+the wiki.
 
-## TODO
+## Workflow
 
-- [ ] `growl check` の実行手順を定義する
-- [ ] 診断結果の分類と優先順位を定義する
-- [ ] 壊れたリンク・重複ID・frontmatterエラーの扱いを整理する
-- [ ] 修正提案と実際の修正を分離する手順を定義する
-- [ ] 削除・大規模変更を行う場合の明示的な承認手順を定義する
+1. Run `growl maintain --dry-run --format json` to collect candidates. Add
+   `--stale-before YYYY-MM-DD` when an age threshold is requested.
+2. Run `growl graph` to verify the evidence for broken references, orphan
+   pages, and unreachable pages.
+3. Run `growl check --format json` to verify frontmatter, types, values, and
+   duplicate identifiers.
+4. Report each candidate, its reason, path, and likely impact.
+5. Wait for explicit approval before changing, moving, archiving, or deleting
+   any file. The current CLI provides detection only.

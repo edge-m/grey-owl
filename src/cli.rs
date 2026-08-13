@@ -1,6 +1,6 @@
 use clap::{CommandFactory, Parser, Subcommand};
 
-use crate::commands::{check, init, overview, search, skill};
+use crate::commands::{check, config, graph, init, maintain, overview, schema, search, skill};
 
 #[derive(Debug, Parser)]
 #[command(name = "growl", about = "Grey Owl wiki validator")]
@@ -17,6 +17,14 @@ enum Command {
     Overview(OverviewCommand),
     #[command(about = "Create a starter configuration")]
     Init(init::Args),
+    #[command(subcommand, about = "Inspect configuration")]
+    Config(ConfigCommand),
+    #[command(about = "Export the wiki knowledge graph")]
+    Graph(graph::Args),
+    #[command(about = "Describe the wiki schema")]
+    Schema(schema::Args),
+    #[command(about = "Find maintenance candidates without changing files")]
+    Maintain(maintain::Args),
     #[command(about = "Write the Grey Owl Agent Skill")]
     Skill(skill::Args),
     #[command(about = "Search structured frontmatter")]
@@ -29,6 +37,12 @@ enum OverviewCommand {
     Directories(overview::DirectoryArgs),
     #[command(about = "Show configured document types")]
     Types(overview::TypeArgs),
+}
+
+#[derive(Debug, Subcommand)]
+enum ConfigCommand {
+    #[command(about = "Validate the configuration file")]
+    Lint(config::LintArgs),
 }
 
 pub fn run(args: Vec<String>) -> Result<u8, String> {
@@ -46,6 +60,10 @@ pub fn run(args: Vec<String>) -> Result<u8, String> {
         Some(Command::Overview(OverviewCommand::Directories(args))) => overview::directories(&args),
         Some(Command::Overview(OverviewCommand::Types(args))) => overview::types(&args),
         Some(Command::Init(args)) => init::run(&args),
+        Some(Command::Config(ConfigCommand::Lint(args))) => config::lint(&args),
+        Some(Command::Graph(args)) => graph::run(&args),
+        Some(Command::Schema(args)) => schema::run(&args),
+        Some(Command::Maintain(args)) => maintain::run(&args),
         Some(Command::Skill(args)) => skill::run(&args),
         Some(Command::Search(args)) => search::run(&args),
         None => {

@@ -1,11 +1,20 @@
 # Grey Owl Wiki Add Article Skill
 
-指定されたソースファイルを起点に、Wikiへ記事を追加した後の確認を行うためのSkillです。記事ファイル自体の作成はこのSkillの責務に含めず、追加された記事がWikiの構造と検証ルールに適合しているかを確認します。
+Use this workflow when an article is created from a source file. The agent or
+user creates the Markdown file; this workflow validates the resulting file and
+does not silently create, move, or delete files.
 
-## TODO
+## Workflow
 
-- [ ] ソースファイルの指定方法を定義する
-- [ ] 追加された記事の特定方法を定義する
-- [ ] type、ID、配置、必須frontmatterの確認方法を定義する
-- [ ] `growl check` の実行と結果の報告形式を定義する
-- [ ] ソースファイルと生成記事の対応関係を確認する必要があるか決める
+1. Inspect the current rules with `growl schema --format json`.
+2. Select a configured type with `growl overview types --type <type>`.
+3. Select a configured destination with `growl overview directories`.
+4. Create the Markdown article using the required frontmatter. Preserve the
+   source-to-article relationship when the user requires traceability.
+5. Validate only the new file with `growl check --file <path> --format json`.
+6. Run `growl check --format json` for the whole wiki.
+7. Report the path, selected type, validation diagnostics, and any remaining
+   broken links or orphan-page diagnostics.
+
+Do not guess required fields, identifiers, type names, or placement rules.
+Ask for clarification when the source does not provide enough information.
