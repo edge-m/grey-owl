@@ -1,6 +1,7 @@
 pub mod config;
 pub mod diagnostic;
 pub mod document;
-pub mod output;
-pub mod validate;
+pub mod graph;
+pub mod link_resolver;
+pub mod validation;
 pub mod workspace;

@@ -1,15 +1,40 @@
+[workspace]
+members = ["crates/growl_core"]
+resolver = "2"
+
+[workspace.dependencies]
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+clap = { version = "4", features = ["derive"] }
+growl_core = { path = "crates/growl_core" }
+indexmap = { version = "2", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+walkdir = "2"
+
 [package]
 name = "grey-owl"
 version = "0.1.0"
 edition = "2024"
 description = "A wiki linter for Open Knowledge Format (OKF)"
 
+[profile.dev]
+codegen-units = 128
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
 [[bin]]
 name = "growl"
 path = "src/main.rs"
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-serde_yaml = "0.9"
-walkdir = "2"
+chrono = { workspace = true }
+clap = { workspace = true }
+growl_core = { workspace = true }
+indexmap = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+serde = { workspace = true }
