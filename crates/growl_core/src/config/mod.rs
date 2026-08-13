@@ -27,6 +27,63 @@ pub struct Config {
     pub config_lint: ConfigLintConfig,
 }
 
+/// A configuration together with the path context needed to resolve relative paths.
+#[derive(Debug, Clone)]
+pub struct ConfigContext {
+    config: Config,
+    base_dir: PathBuf,
+    wiki_root: PathBuf,
+}
+
+impl ConfigContext {
+    /// Build a context from an in-memory configuration and its path base directory.
+    pub fn new(config: Config, base_dir: impl Into<PathBuf>) -> Result<Self, String> {
+        let base_dir = base_dir.into();
+        let wiki_root = config
+            .wiki_root
+            .as_ref()
+            .map(|wiki_root| if wiki_root.is_absolute() { wiki_root.clone() } else { base_dir.join(wiki_root) })
+            .ok_or_else(|| "configuration does not define wiki_root".to_string())?;
+        Ok(Self { config, base_dir, wiki_root })
+    }
+
+    /// Return the underlying configuration.
+    pub fn config(&self) -> &Config {
+        &self.config
+    }
+
+    /// Return the directory used to resolve relative configuration paths.
+    pub fn base_dir(&self) -> &Path {
+        &self.base_dir
+    }
+
+    /// Return the resolved wiki root.
+    pub fn wiki_root(&self) -> &Path {
+        &self.wiki_root
+    }
+
+    /// Return the configured document type by name.
+    pub fn type_config(&self, name: &str) -> Option<&TypeConfig> {
+        self.config.types.get(name)
+    }
+
+    /// Return the configured directory by its wiki-relative path.
+    pub fn directory_config(&self, path: &Path) -> Option<&DirectoryConfig> {
+        let mut directories = &self.config.directories;
+        let mut directory = None;
+        for component in path.components() {
+            let name = match component {
+                std::path::Component::Normal(name) => name.to_str()?,
+                std::path::Component::CurDir => continue,
+                _ => return None,
+            };
+            directory = directories.get(name);
+            directories = &directory?.directories;
+        }
+        directory
+    }
+}
+
 impl Config {
     pub fn from_path(path: &Path) -> Result<Self, String> {
         let content =
@@ -55,5 +112,18 @@ mod tests {
             serde_yaml::from_str("mandatory_fields:\n  title:\n    type: string\n    optional: true\n");
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn context_resolves_paths_and_nested_directory_configurations() {
+        let config: Config = serde_yaml::from_str(
+            "wiki_root: wiki\ndirectories:\n  docs:\n    directories:\n      guides:\n        description: Guides\ntypes:\n  guide:\n    description: A guide\n",
+        )
+        .expect("config should parse");
+        let context = ConfigContext::new(config, "/project/config").expect("context should resolve");
+
+        assert_eq!(context.wiki_root(), Path::new("/project/config/wiki"));
+        assert_eq!(context.directory_config(Path::new("docs/guides")).unwrap().description.as_deref(), Some("Guides"));
+        assert_eq!(context.type_config("guide").unwrap().description.as_deref(), Some("A guide"));
     }
 }

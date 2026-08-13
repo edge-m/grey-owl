@@ -63,5 +63,5 @@ fn is_markdown(path: &Path) -> bool {
 fn relative_path(root: &Path, path: &Path) -> Result<String, String> {
     path.strip_prefix(root)
         .map_err(|error| format!("cannot calculate relative path: {error}"))
-        .map(|path| path.to_string_lossy().replace('\\', "/"))
+        .map(|path| document::normalize_relative_path(&path.to_string_lossy()))
 }

@@ -38,15 +38,15 @@ growl init
 Wikiを検証します。
 
 ```sh
-growl check . --config ./growl.yml
-growl check . --config ./growl.yml --format json
+growl check --config ./growl.yml
+growl check --config ./growl.yml --format json
 ```
 
 `growl init`は`growl.yml`を作成します。既存のファイルは上書きしません。
 
 ## 設定
 
-生成される設定は、シンプルなYAMLスキーマです。`wiki_root`は設定ファイルからの相対パスとして解決され、`growl check`のWikiパスを省略した場合に使われます。`directories`では説明付きのディレクトリ構成をネストして定義できます。データソース用の`raw`にはファイルを自由に追加できます。`mandatory_fields`は全ドキュメントで必須となり、`optional: true`は指定できません。type固有のフィールドは、`optional: true`を指定しない限り必須です。配列の`items`やオブジェクトの`fields`で、値の構造をネストして定義できます。
+生成される設定は、シンプルなYAMLスキーマです。`wiki_root`は設定ファイルからの相対パスとして解決され、`growl`コマンドがWikiを見つけるために使われます。`directories`では説明付きのディレクトリ構成をネストして定義できます。データソース用の`raw`にはファイルを自由に追加できます。`mandatory_fields`は全ドキュメントで必須となり、`optional: true`は指定できません。type固有のフィールドは、`optional: true`を指定しない限り必須です。配列の`items`やオブジェクトの`fields`で、値の構造をネストして定義できます。
 
 ```yaml
 wiki_root: .
@@ -99,15 +99,29 @@ config_lint:
 
 ```text
 growl init
-growl check [<wiki-path>] [--config <file>] [--format human|json]
+growl overview directories [--config <file>] [--statistics]
+growl overview types [--config <file>] [--statistics] [--type <type>]
+growl search [--config <file>] --query <query>
+growl check [--config <file>] [--file <path>] [--format human|json]
 growl skill <output-directory>
 ```
+
+`--config`を省略した場合、コマンドはカレントディレクトリの`growl.yml`を探し、
+そこから`wiki_root`を解決します。`--file`なしの`check`はWiki全体を検証し、
+`Index.md`から到達できないページも検出します。
 
 `growl skill`は静的なAgent Skillを次の場所へ出力します。
 
 ```text
 <output-directory>/growl/SKILL.md
+<output-directory>/growl/wiki-overview/SKILL.md
+<output-directory>/growl/wiki-add-article/SKILL.md
+<output-directory>/growl/wiki-maintenance/SKILL.md
+<output-directory>/growl/wiki-search/SKILL.md
 ```
+
+生成されるSkillは現在、Wiki全体像の取得、記事追加後の検証、メンテナンス確認、
+検索の各ワークフローについて、概要と明示的なTODOを提供します。
 
 終了コード：
 

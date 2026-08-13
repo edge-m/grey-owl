@@ -1,84 +1,40 @@
-# Grey Owl Wiki Skill
+# Grey Owl Wiki Skills
 
-Use this skill when working with a wiki validated by Grey Owl (`growl`). It
-defines a safe, repeatable workflow for inspecting, creating, updating, and
-maintaining wiki documents.
+Grey OwlのWiki操作を、目的ごとに分けたSkill群です。
 
-## Start every task by reading the wiki guidance
+## Skills
 
-Before changing a wiki, run these commands to obtain current information:
+- `wiki-overview`: Wikiの全体像を取得する
+- `wiki-add-article`: 指定されたソースファイルを起点に記事追加後の確認を行う
+- `wiki-maintenance`: `growl check` を中心にWikiの状態を確認する
+- `wiki-search`: Wiki内の情報を検索する
 
-1. Run `growl schema <wiki-path> --format text` or `--format json` for the
-   current document types, fields, relationships, and placement rules.
-2. Run `growl check <wiki-path> --format json` for current diagnostics.
+## 共通方針
 
-Do not treat saved schema or diagnostics files as authoritative. If output is
-saved for debugging or review, treat it as a cache or snapshot because it may
-be stale after the wiki or configuration changes.
+- 操作前に設定とWikiの現在状態を確認する
+- 未定義のtype、field、配置ルールを推測しない
+- 変更後は `growl check` を実行する
+- 未解決の検証エラーを成功として扱わない
 
-Do not guess a document type, field, identifier rule, or relationship when the
-schema output does not define it. Look for an existing document with the same
-kind and ask for clarification when the intended structure remains unclear.
+## CLI workflow
 
-## Validation
-
-Run the validator after creating or updating documents:
-
-```sh
-growl check <wiki-path>
-growl check <wiki-path> --format json
-```
-
-Use JSON output when diagnostics need to be inspected programmatically. Do not
-report a task as complete while validation errors are unresolved. If the
-`growl` binary is not installed, run the project command from its repository as
-appropriate, for example `cargo run -- check <wiki-path>`.
-
-## Add a document
-
-1. Identify the document's purpose and type.
-2. Confirm its type, required frontmatter, location, and filename rules from
-   the wiki guidance or schema.
-3. Choose an identifier that does not already exist.
-4. Create the smallest valid frontmatter and Markdown body.
-5. Record configured relationships in their defined format.
-6. Run `growl check` and review all diagnostics.
-7. Report the created path, metadata, and validation result.
-
-## Update a document
-
-1. Locate the target by identifier, path, type, or relationship and verify it
-   is the intended document.
-2. Re-read the applicable schema before changing metadata.
-3. Keep the change limited to the requested scope; do not rewrite unrelated
-   body text.
-4. Check for affected identifiers and relationships when metadata changes.
-5. Run `growl check` and report the change and its validation result.
-
-## Search and maintenance
-
-Prefer structured information such as identifiers, types, fields, and
-relationships. Use text search only when structure is insufficient, then
-verify the matching path and metadata.
-
-Maintenance is performed in this order:
+Use the following commands when the generated CLI is available:
 
 ```text
-detect -> review candidates -> assess impact -> prepare a plan or dry-run -> apply explicitly
+growl overview directories
+growl overview types
+growl overview types --type <type>
+growl search --query 'field:value'
+growl check
+growl check --file <path>
 ```
 
-An orphaned, old, or apparently unused document must not be deleted solely for
-that reason. Check for implicit references and reversibility first. Do not
-perform broad or destructive changes without an explicit request and a clear
-list of affected files.
+Commands resolve the wiki root from `growl.yml` in the current directory by
+default. Use `--config <path>` to select another configuration file. Use `rg`
+for searching Markdown body text; `growl search` is for structured frontmatter.
 
-## Safety rules
+## TODO
 
-- Inspect target files before changing them.
-- Do not invent undefined types, fields, or relationships.
-- Do not modify documents outside the requested scope.
-- Treat metadata changes as potentially higher impact than body changes.
-- Never silently ignore validation errors.
-- Do not delete documents automatically.
-- Keep detection, planning, and applying changes as separate steps.
-- Report what changed, what was not changed, and the validation result.
+- [ ] 各Skillの詳細な実行手順を定義する
+- [ ] CLIで提供する情報取得・検索機能との対応を定義する
+- [ ] 出力形式（human / JSON）を整理する

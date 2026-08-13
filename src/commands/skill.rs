@@ -4,7 +4,13 @@ use std::path::PathBuf;
 use clap::Args as ClapArgs;
 
 const SKILL_NAME: &str = "growl";
-const SKILL_CONTENT: &str = include_str!("../../skills/growl/SKILL.md");
+const SKILLS: &[(&str, &str)] = &[
+    ("SKILL.md", include_str!("../../skills/growl/SKILL.md")),
+    ("wiki-overview/SKILL.md", include_str!("../../skills/growl/wiki-overview/SKILL.md")),
+    ("wiki-add-article/SKILL.md", include_str!("../../skills/growl/wiki-add-article/SKILL.md")),
+    ("wiki-maintenance/SKILL.md", include_str!("../../skills/growl/wiki-maintenance/SKILL.md")),
+    ("wiki-search/SKILL.md", include_str!("../../skills/growl/wiki-search/SKILL.md")),
+];
 
 #[derive(Debug, ClapArgs)]
 pub struct Args {
@@ -17,10 +23,16 @@ pub fn run(args: &Args) -> Result<u8, String> {
     fs::create_dir_all(&skill_directory)
         .map_err(|error| format!("cannot create skill directory {}: {error}", skill_directory.display()))?;
 
-    let skill_path = skill_directory.join("SKILL.md");
-    fs::write(&skill_path, SKILL_CONTENT)
-        .map_err(|error| format!("cannot write skill {}: {error}", skill_path.display()))?;
-    println!("wrote {}", skill_path.display());
+    for (relative_path, content) in SKILLS {
+        let skill_path = skill_directory.join(relative_path);
+        if let Some(parent) = skill_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("cannot create skill directory {}: {error}", parent.display()))?;
+        }
+        fs::write(&skill_path, content)
+            .map_err(|error| format!("cannot write skill {}: {error}", skill_path.display()))?;
+        println!("wrote {}", skill_path.display());
+    }
 
     Ok(0)
 }

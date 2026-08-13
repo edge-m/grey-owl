@@ -126,6 +126,7 @@ dependencies = [
  "clap",
  "growl_core",
  "indexmap",
+ "serde",
  "serde_json",
  "serde_yaml",
 ]

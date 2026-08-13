@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use chrono::{DateTime, NaiveDate};
 use indexmap::IndexMap;
 use serde_yaml::Value;
@@ -7,12 +5,36 @@ use serde_yaml::Value;
 use crate::config::{Config, FieldRule, MandatoryFieldRule, ValueType};
 use crate::diagnostic::Diagnostic;
 use crate::document::{self, Document};
+use crate::link_resolver::OutgoingTarget;
 use crate::workspace::ScanResult;
 
 pub fn lint(scan: &ScanResult, config: &Config) -> Vec<Diagnostic> {
     let mut diagnostics = scan.diagnostics.clone();
     diagnostics.extend(scan.documents.iter().flat_map(|document| lint_document(document, config)));
-    diagnostics.extend(lint_workspace(scan));
+    diagnostics.extend(lint_links(scan));
+    diagnostics
+}
+
+fn lint_links(scan: &ScanResult) -> Vec<Diagnostic> {
+    let pages = scan.documents.iter().map(|document| document.page_id()).collect::<std::collections::HashSet<_>>();
+    let mut diagnostics = Vec::new();
+    for document in &scan.documents {
+        let links = document.outgoing_links();
+        for link in links.links {
+            if let OutgoingTarget::Page { id } = link.target
+                && !pages.contains(&id)
+            {
+                diagnostics.push(Diagnostic {
+                    code: "broken-link".to_string(),
+                    severity: crate::diagnostic::Severity::Error,
+                    path: Some(document.relative_file_path_from_wiki_root.clone()),
+                    line: Some(link.line),
+                    column: Some(link.column),
+                    message: format!("page link points to missing page '{id}'"),
+                });
+            }
+        }
+    }
     diagnostics
 }
 
@@ -168,24 +190,4 @@ mod tests {
         assert!(matches_type(&Value::String("2026-08-12T10:30:00.123Z".into()), &ValueType::Datetime));
         assert!(!matches_type(&Value::String("2026-08-12T19:30:00+09:00".into()), &ValueType::Datetime));
     }
-}
-
-fn lint_workspace(scan: &ScanResult) -> Vec<Diagnostic> {
-    let mut diagnostics = Vec::new();
-    let mut identifiers = BTreeMap::<String, String>::new();
-
-    for document in &scan.documents {
-        if let Some(identifier) = document::string_value(&document.frontmatter, "id")
-            && let Some(previous) =
-                identifiers.insert(identifier.clone(), document.relative_file_path_from_wiki_root.clone())
-        {
-            diagnostics.push(Diagnostic::error(
-                "duplicate-identifier",
-                Some(document.relative_file_path_from_wiki_root.clone()),
-                format!("identifier '{identifier}' is already used by {previous}"),
-            ));
-        }
-    }
-
-    diagnostics
 }

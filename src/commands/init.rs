@@ -8,7 +8,7 @@ use indexmap::IndexMap;
 const CONFIG_NAME: &str = "growl.yml";
 
 const TOP_LEVEL_COMMENTS: &[(&str, &str)] = &[
-    ("wiki_root:", "Wiki root path, used when the path is omitted from `growl check`."),
+    ("wiki_root:", "Wiki root path used by Grey Owl commands."),
     ("directories:", "Directory structure and descriptions."),
     ("mandatory_fields:", "Fields required on every document."),
     ("types:", "Fields specific to each document type."),

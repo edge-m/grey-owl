@@ -44,8 +44,8 @@ growl init
 Validate the wiki:
 
 ```sh
-growl check . --config ./growl.yml
-growl check . --config ./growl.yml --format json
+growl check --config ./growl.yml
+growl check --config ./growl.yml --format json
 ```
 
 `growl init` creates `growl.yml` and never overwrites an existing file.
@@ -53,8 +53,8 @@ growl check . --config ./growl.yml --format json
 ## Configuration
 
 The generated configuration is a small YAML schema. `wiki_root` is resolved
-relative to the configuration file and is used when the wiki path is omitted
-from `growl check`. `directories` describes the directory structure with
+relative to the configuration file and is used by `growl` commands to locate
+the wiki. `directories` describes the directory structure with
 nestable descriptions. The `raw` directory can be used as a data source where
 files are added freely. Type descriptions can be written with `description`.
 `mandatory_fields` are required on every document and cannot use `optional: true`.
@@ -117,15 +117,30 @@ object fields use `items` and `fields` respectively.
 
 ```text
 growl init
-growl check [<wiki-path>] [--config <file>] [--format human|json]
+growl overview directories [--config <file>] [--statistics]
+growl overview types [--config <file>] [--statistics] [--type <type>]
+growl search [--config <file>] --query <query>
+growl check [--config <file>] [--file <path>] [--format human|json]
 growl skill <output-directory>
 ```
+
+When `--config` is omitted, commands look for `growl.yml` in the current
+directory and resolve `wiki_root` from it. `check` without `--file` validates
+the whole wiki, including pages that cannot be reached from `Index.md`.
 
 `growl skill` writes the static Agent Skill to:
 
 ```text
 <output-directory>/growl/SKILL.md
+<output-directory>/growl/wiki-overview/SKILL.md
+<output-directory>/growl/wiki-add-article/SKILL.md
+<output-directory>/growl/wiki-maintenance/SKILL.md
+<output-directory>/growl/wiki-search/SKILL.md
 ```
+
+The generated Skills currently provide outlines and explicit TODOs for the
+Wiki overview, article-addition validation, maintenance checks, and search
+workflows.
 
 Exit codes:
 

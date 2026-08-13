@@ -17,6 +17,18 @@ pub struct Document {
     pub raw_links: RawLinks,
 }
 
+impl Document {
+    /// Return the stable page ID derived from this document's wiki-relative path.
+    pub fn page_id(&self) -> String {
+        page_id(&self.relative_file_path_from_wiki_root)
+    }
+
+    /// Resolve links found in this document against its wiki-relative path.
+    pub fn outgoing_links(&self) -> crate::link_resolver::OutgoingLinks {
+        crate::link_resolver::resolve(&self.raw_links, &self.relative_file_path_from_wiki_root)
+    }
+}
+
 #[derive(Debug, Default)]
 /// Links found in a document while preserving their original Markdown data.
 pub struct RawLinks {
@@ -153,6 +165,17 @@ pub fn has_field(frontmatter: &Mapping, field: &str) -> bool {
     frontmatter.contains_key(Value::String(field.to_string()))
 }
 
+/// Return the stable page ID derived from a Markdown path relative to the wiki root.
+pub fn page_id(path: &str) -> String {
+    let normalized = normalize_relative_path(path);
+    normalized.strip_suffix(".md").unwrap_or(&normalized).to_string()
+}
+
+/// Normalize a wiki-relative path to its platform-independent representation.
+pub fn normalize_relative_path(path: &str) -> String {
+    path.replace('\\', "/")
+}
+
 /// Return string-keyed front matter entries in deterministic key order.
 pub fn values(frontmatter: &Mapping) -> BTreeMap<String, &Value> {
     frontmatter.iter().filter_map(|(key, value)| Some((key.as_str()?.to_string(), value))).collect()
@@ -182,5 +205,9 @@ mod tests {
                 },
             ]
         );
+        assert_eq!(document.page_id(), "note");
+        assert_eq!(document.outgoing_links().links.len(), 2);
+        assert_eq!(page_id("docs\\guide.md"), "docs/guide");
+        assert_eq!(normalize_relative_path("docs\\guide.md"), "docs/guide.md");
     }
 }
