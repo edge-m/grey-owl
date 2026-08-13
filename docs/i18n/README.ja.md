@@ -1,5 +1,7 @@
 # Grey Owl
 
+![Grey Owl logo](../img/wide.webp)
+
 Grey Owlは、構造化されたMarkdown Wiki向けの高速な設定駆動型バリデーターです。YAML frontmatterを検証し、人間向けまたはJSON形式で診断結果を出力します。
 
 プロジェクト名とライブラリ名は`grey-owl`、CLI実行ファイル名は`growl`です。
