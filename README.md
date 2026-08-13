@@ -1,5 +1,7 @@
 # Grey Owl
 
+![Grey Owl logo](docs/img/wide.webp)
+
 Grey Owl is a fast, configuration-driven validator for structured Markdown
 wikis. It checks YAML frontmatter and reports actionable diagnostics in human-
 readable or JSON form.
