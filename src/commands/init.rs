@@ -8,6 +8,7 @@ use indexmap::IndexMap;
 const CONFIG_NAME: &str = "growl.yml";
 
 const TOP_LEVEL_COMMENTS: &[(&str, &str)] = &[
+    ("growl_version:", "Growl version that generated this configuration."),
     ("wiki_root:", "Wiki root path used by Grey Owl commands."),
     ("directories:", "Directory structure and descriptions."),
     ("mandatory_fields:", "Fields required on every document."),
@@ -56,6 +57,7 @@ pub fn run(_args: &Args) -> Result<u8, String> {
     }
 
     let config = Config {
+        growl_version: Some(env!("CARGO_PKG_VERSION").to_string()),
         wiki_root: Some(PathBuf::from(".")),
         directories: IndexMap::from([(
             "raw".to_string(),

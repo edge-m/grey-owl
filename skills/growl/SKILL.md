@@ -6,6 +6,7 @@ Markdown wiki with Grey Owl.
 ## Skills
 
 - `wiki-overview`: Inspect the wiki structure and current health.
+- `wiki-config`: Build and validate a Wiki configuration through a guided conversation.
 - `wiki-add-article`: Add an article from a source and validate the result.
 - `wiki-maintenance`: Find and assess maintenance candidates.
 - `wiki-search`: Search structured metadata, links, and body text.

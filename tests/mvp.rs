@@ -14,7 +14,8 @@ fn fixture(name: &str) -> PathBuf {
 fn write_config(root: &Path) {
     fs::write(
         root.join("growl.yml"),
-        r#"wiki_root: .
+        r#"growl_version: 0.1.0
+wiki_root: .
 mandatory_fields:
   type:
     type: string
@@ -90,14 +91,29 @@ fn overview_and_search_return_structured_results() {
 }
 
 #[test]
-fn config_lint_validates_without_scanning_the_wiki() {
+fn config_validate_validates_without_scanning_the_wiki() {
     let root = fixture("config-lint");
     write_config(&root);
 
     let output = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["config", "lint", "--config", root.join("growl.yml").to_str().unwrap(), "--format", "json"])
+        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap(), "--format", "json"])
         .output()
-        .expect("config lint should run");
+        .expect("config validate should run");
+
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"[]\n");
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn config_validate_is_the_configuration_validation_command() {
+    let root = fixture("config-validate");
+    write_config(&root);
+
+    let output = Command::new(env!("CARGO_BIN_EXE_growl"))
+        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap(), "--format", "json"])
+        .output()
+        .expect("config validate should run");
 
     assert!(output.status.success());
     assert_eq!(output.stdout, b"[]\n");
@@ -253,6 +269,7 @@ fn init_command_writes_default_config() {
     assert!(output.status.success());
     let config = fs::read_to_string(root.join("growl.yml")).expect("config should be written");
     assert!(config.contains("mandatory_fields:"));
+    assert!(config.contains("growl_version: 0.1.0"));
     assert!(config.contains("wiki_root: ."));
     assert!(config.contains("directories:"));
     assert!(config.contains("description:"));
@@ -317,7 +334,7 @@ fn configured_root_and_nested_directories_are_supported() {
 }
 
 #[test]
-fn config_lint_reports_invalid_rule_shapes() {
+fn config_validate_reports_invalid_rule_shapes() {
     let root = fixture("invalid-config");
     fs::write(
         root.join("growl.yml"),
@@ -326,9 +343,9 @@ fn config_lint_reports_invalid_rule_shapes() {
     .expect("config should be written");
 
     let output = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["config", "lint", "--config", root.join("growl.yml").to_str().unwrap(), "--format", "json"])
+        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap(), "--format", "json"])
         .output()
-        .expect("config lint should run");
+        .expect("config validate should run");
     assert_eq!(output.status.code(), Some(1));
     let diagnostics: Vec<serde_json::Value> = serde_json::from_slice(&output.stdout).expect("valid JSON");
     let codes: Vec<&str> = diagnostics.iter().filter_map(|diagnostic| diagnostic["code"].as_str()).collect();

@@ -51,6 +51,7 @@ growl check --config ./growl.yml --format json
 生成される設定は、シンプルなYAMLスキーマです。`wiki_root`は設定ファイルからの相対パスとして解決され、`growl`コマンドがWikiを見つけるために使われます。`directories`では説明付きのディレクトリ構成をネストして定義できます。データソース用の`raw`にはファイルを自由に追加できます。`mandatory_fields`は全ドキュメントで必須となり、`optional: true`は指定できません。type固有のフィールドは、`optional: true`を指定しない限り必須です。配列の`items`やオブジェクトの`fields`で、値の構造をネストして定義できます。
 
 ```yaml
+growl_version: 0.1.0
 wiki_root: .
 
 directories:
@@ -96,12 +97,13 @@ config_lint:
 
 未知のfrontmatterフィールドは保持され、エラーにはなりません。ディレクトリ設定は説明専用で、ネストできます。設定したWikiルートを使う場合は`growl check --config ./growl.yml`を実行します。`--config`は設定ファイル自体のパス、`wiki_root`はその設定ファイル内で指定するWikiルートのパスです。
 `wiki_lint`にはWiki検証の設定、`config_lint`には設定ファイル自体を検証するための設定を記述します。配列やオブジェクトのフィールドは、それぞれ`items`や`fields`でネストして定義できます。
+`growl_version`には設定を生成した`growl`のバージョンが記録されます。`growl config validate`では、設定を生成したバージョンが現在の`growl`の互換範囲に含まれるか確認します。
 
 ## コマンド
 
 ```text
 growl init
-growl config lint [--config <file>] [--format human|json]
+growl config validate [--config <file>] [--format human|json]
 growl graph [--config <file>]
 growl schema [--config <file>] [--format text|json]
 growl maintain [--config <file>] [--stale-before YYYY-MM-DD] [--dry-run] [--format human|json]

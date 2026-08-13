@@ -13,6 +13,9 @@ pub use schema::{
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Config {
+    /// Version of growl that generated this configuration.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub growl_version: Option<String>,
     /// Wiki root, relative to the configuration file when it is not absolute.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wiki_root: Option<PathBuf>,

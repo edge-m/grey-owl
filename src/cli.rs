@@ -42,7 +42,7 @@ enum OverviewCommand {
 #[derive(Debug, Subcommand)]
 enum ConfigCommand {
     #[command(about = "Validate the configuration file")]
-    Lint(config::LintArgs),
+    Validate(config::ValidateArgs),
 }
 
 pub fn run(args: Vec<String>) -> Result<u8, String> {
@@ -60,7 +60,7 @@ pub fn run(args: Vec<String>) -> Result<u8, String> {
         Some(Command::Overview(OverviewCommand::Directories(args))) => overview::directories(&args),
         Some(Command::Overview(OverviewCommand::Types(args))) => overview::types(&args),
         Some(Command::Init(args)) => init::run(&args),
-        Some(Command::Config(ConfigCommand::Lint(args))) => config::lint(&args),
+        Some(Command::Config(ConfigCommand::Validate(args))) => config::validate(&args),
         Some(Command::Graph(args)) => graph::run(&args),
         Some(Command::Schema(args)) => schema::run(&args),
         Some(Command::Maintain(args)) => maintain::run(&args),
