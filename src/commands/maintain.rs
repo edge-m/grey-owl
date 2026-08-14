@@ -61,7 +61,7 @@ pub fn run(args: &Args) -> Result<u8, String> {
                 .iter()
                 .find(|document| document.page_id() == *page_id)
                 .map(|document| document.relative_file_path_from_wiki_root.clone()),
-            reason: "page is not reachable from Index.md".to_string(),
+            reason: "page is not reachable from index.md".to_string(),
         });
     }
     for reference in &graph.broken_references {

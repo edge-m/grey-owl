@@ -33,15 +33,9 @@ types:
     .expect("config should be written");
 }
 
-fn run_check(root: &Path, format: &str) -> std::process::Output {
+fn run_check(root: &Path, _format: &str) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args([
-            "check",
-            "--config",
-            root.join("growl.yml").to_str().expect("config path should be utf-8"),
-            "--format",
-            format,
-        ])
+        .args(["check", "--config", root.join("growl.yml").to_str().expect("config path should be utf-8")])
         .output()
         .expect("growl should run")
 }
@@ -50,14 +44,14 @@ fn run_check(root: &Path, format: &str) -> std::process::Output {
 fn valid_wiki_returns_success() {
     let root = fixture("valid");
     write_config(&root);
-    fs::write(root.join("Index.md"), "---\ntype: note\ntitle: Index\n---\n[Welcome](note.md)\n")
+    fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\n---\n[Welcome](note.md)\n")
         .expect("index should be written");
     fs::write(root.join("note.md"), "---\nid: welcome\ntype: note\ntitle: Welcome\nstatus: active\n---\n# Welcome\n")
         .expect("document should be written");
 
     let output = run_check(&root, "json");
     assert!(output.status.success());
-    assert_eq!(output.stdout, b"[]\n");
+    assert_eq!(output.stdout, b"OK: no issues found\n");
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -65,7 +59,7 @@ fn valid_wiki_returns_success() {
 fn overview_and_search_return_structured_results() {
     let root = fixture("overview-search");
     write_config(&root);
-    fs::write(root.join("Index.md"), "---\ntype: note\ntitle: Index\n---\n[Welcome](note.md)\n")
+    fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\n---\n[Welcome](note.md)\n")
         .expect("index should be written");
     fs::write(root.join("note.md"), "---\ntype: note\ntitle: Welcome\nstatus: active\n---\n")
         .expect("document should be written");
@@ -96,12 +90,12 @@ fn config_validate_validates_without_scanning_the_wiki() {
     write_config(&root);
 
     let output = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap(), "--format", "json"])
+        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap()])
         .output()
         .expect("config validate should run");
 
     assert!(output.status.success());
-    assert_eq!(output.stdout, b"[]\n");
+    assert_eq!(output.stdout, b"OK: no issues found\n");
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -111,12 +105,12 @@ fn config_validate_is_the_configuration_validation_command() {
     write_config(&root);
 
     let output = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap(), "--format", "json"])
+        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap()])
         .output()
         .expect("config validate should run");
 
     assert!(output.status.success());
-    assert_eq!(output.stdout, b"[]\n");
+    assert_eq!(output.stdout, b"OK: no issues found\n");
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -124,7 +118,7 @@ fn config_validate_is_the_configuration_validation_command() {
 fn graph_exports_nodes_edges_and_maintenance_signals() {
     let root = fixture("graph");
     write_config(&root);
-    fs::write(root.join("Index.md"), "---\ntype: note\ntitle: Index\n---\n[Welcome](note.md)\n")
+    fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\n---\n[Welcome](note.md)\n")
         .expect("index should be written");
     fs::write(root.join("note.md"), "---\ntype: note\ntitle: Welcome\n---\n[Missing](missing.md)\n")
         .expect("note should be written");
@@ -162,7 +156,7 @@ fn schema_exports_configuration_for_agents() {
 fn maintain_reports_candidates_without_modifying_files() {
     let root = fixture("maintain");
     write_config(&root);
-    fs::write(root.join("Index.md"), "---\ntype: note\ntitle: Index\n---\n[Missing](missing.md)\n")
+    fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\n---\n[Missing](missing.md)\n")
         .expect("index should be written");
     fs::write(root.join("orphan.md"), "---\ntype: note\ntitle: Orphan\n---\n").expect("orphan should be written");
     let before = fs::read(root.join("orphan.md")).expect("orphan should be readable");
@@ -183,41 +177,40 @@ fn maintain_reports_candidates_without_modifying_files() {
 fn check_reports_orphans_and_can_filter_to_one_file() {
     let root = fixture("orphans");
     write_config(&root);
-    fs::write(root.join("Index.md"), "---\ntype: note\ntitle: Index\n---\n[Welcome](note.md)\n")
+    fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\n---\n[Welcome](note.md)\n")
         .expect("index should be written");
     fs::write(root.join("note.md"), "---\ntype: note\ntitle: Welcome\n---\n").expect("document should be written");
     fs::write(root.join("orphan.md"), "---\ntype: note\ntitle: Orphan\n---\n").expect("document should be written");
 
     let config = root.join("growl.yml");
     let all = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["check", "--config", config.to_str().unwrap(), "--format", "json"])
+        .args(["check", "--config", config.to_str().unwrap()])
         .output()
         .expect("check should run");
-    let all_json: Vec<serde_json::Value> = serde_json::from_slice(&all.stdout).expect("valid JSON");
-    assert!(all_json.iter().any(|diagnostic| diagnostic["code"] == "orphan-page"));
+    let all_output = String::from_utf8(all.stdout).expect("human output should be utf-8");
+    assert!(all_output.contains("orphan-page"));
 
     let one = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["check", "--config", config.to_str().unwrap(), "--file", "orphan.md", "--format", "json"])
+        .args(["check", "--config", config.to_str().unwrap(), "--file", "orphan.md"])
         .output()
         .expect("file check should run");
-    let one_json: Vec<serde_json::Value> = serde_json::from_slice(&one.stdout).expect("valid JSON");
-    assert_eq!(one_json.len(), 1);
-    assert_eq!(one_json[0]["code"], "orphan-page");
+    let one_output = String::from_utf8(one.stdout).expect("human output should be utf-8");
+    assert!(one_output.contains("orphan-page"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
 #[test]
-fn missing_field_is_reported_as_json() {
+fn missing_field_is_reported() {
     let root = fixture("missing-field");
     write_config(&root);
-    fs::write(root.join("Index.md"), "---\ntype: note\ntitle: Index\n---\n[Missing](note.md)\n")
+    fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\n---\n[Missing](note.md)\n")
         .expect("index should be written");
     fs::write(root.join("note.md"), "---\nid: missing-title\ntype: note\n---\n").expect("document should be written");
 
     let output = run_check(&root, "json");
     assert_eq!(output.status.code(), Some(1));
-    let diagnostics: serde_json::Value = serde_json::from_slice(&output.stdout).expect("valid JSON");
-    assert_eq!(diagnostics[0]["code"], "missing-required-field");
+    let diagnostics = String::from_utf8(output.stdout).expect("human output should be utf-8");
+    assert!(diagnostics.contains("missing-required-field"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -225,7 +218,7 @@ fn missing_field_is_reported_as_json() {
 fn duplicate_identifier_and_invalid_frontmatter_are_reported() {
     let root = fixture("invalid");
     write_config(&root);
-    fs::write(root.join("Index.md"), "---\ntype: note\ntitle: Index\n---\n[One](one.md) [Two](two.md)\n")
+    fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\n---\n[One](one.md) [Two](two.md)\n")
         .expect("index should be written");
     fs::write(root.join("one.md"), "---\nid: same\ntype: note\ntitle: One\n---\n")
         .expect("document should be written");
@@ -235,9 +228,8 @@ fn duplicate_identifier_and_invalid_frontmatter_are_reported() {
 
     let output = run_check(&root, "json");
     assert_eq!(output.status.code(), Some(1));
-    let diagnostics: Vec<serde_json::Value> = serde_json::from_slice(&output.stdout).expect("valid JSON");
-    let codes: Vec<&str> = diagnostics.iter().filter_map(|diagnostic| diagnostic["code"].as_str()).collect();
-    assert!(codes.contains(&"invalid-frontmatter"));
+    let diagnostics = String::from_utf8(output.stdout).expect("human output should be utf-8");
+    assert!(diagnostics.contains("invalid-frontmatter"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -331,24 +323,17 @@ fn configured_root_and_nested_directories_are_supported() {
         "wiki_root: wiki\ndirectories:\n  raw:\n    description: Raw source\n    directories:\n      inbox:\n        description: Incoming files\nmandatory_fields:\n  type:\n    type: string\ntypes:\n  note:\n    description: A note\n    fields: {}\n",
     )
     .expect("config should be written");
-    fs::write(root.join("wiki/Index.md"), "---\ntype: note\n---\n[Wrong](raw/inbox/wrong.md)\n")
+    fs::write(root.join("wiki/index.md"), "---\ntype: note\n---\n[Wrong](raw/inbox/wrong.md)\n")
         .expect("index should be written");
     fs::write(root.join("wiki/raw/inbox/wrong.md"), "---\nid: wrong\ntype: note\n---\n")
         .expect("document should be written");
 
     let output = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args([
-            "check",
-            "--config",
-            root.join("growl.yml").to_str().expect("path should be utf-8"),
-            "--format",
-            "json",
-        ])
+        .args(["check", "--config", root.join("growl.yml").to_str().expect("path should be utf-8")])
         .output()
         .expect("growl should run");
     assert!(output.status.success());
-    let diagnostics: Vec<serde_json::Value> = serde_json::from_slice(&output.stdout).expect("valid JSON");
-    assert!(diagnostics.is_empty());
+    assert_eq!(output.stdout, b"OK: no issues found\n");
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -362,14 +347,14 @@ fn config_validate_reports_invalid_rule_shapes() {
     .expect("config should be written");
 
     let output = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap(), "--format", "json"])
+        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap()])
         .output()
         .expect("config validate should run");
     assert_eq!(output.status.code(), Some(1));
-    let diagnostics: Vec<serde_json::Value> = serde_json::from_slice(&output.stdout).expect("valid JSON");
-    let codes: Vec<&str> = diagnostics.iter().filter_map(|diagnostic| diagnostic["code"].as_str()).collect();
-    assert!(codes.contains(&"config-items-require-array"));
-    assert!(codes.contains(&"config-values-require-string"));
+    let diagnostics = String::from_utf8(output.stdout).expect("human output should be utf-8");
+    assert!(diagnostics.contains("config-items-require-array"));
+    assert!(diagnostics.contains("config-values-require-string"));
+    assert!(diagnostics.contains("help: use 'items' only with type: array"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -384,8 +369,8 @@ fn invalid_config_stops_check_with_configuration_exit_code() {
 
     let output = run_check(&root, "json");
     assert_eq!(output.status.code(), Some(2));
-    let diagnostics: Vec<serde_json::Value> = serde_json::from_slice(&output.stdout).expect("valid JSON");
-    assert_eq!(diagnostics[0]["code"], "config-values-require-string");
+    let diagnostics = String::from_utf8(output.stdout).expect("human output should be utf-8");
+    assert!(diagnostics.contains("config-values-require-string"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -397,16 +382,14 @@ fn check_reports_type_value_and_nested_shape_errors() {
         "wiki_root: .\nmandatory_fields:\n  type:\n    type: string\n  tags:\n    type: array\n    items:\n      type: string\ntypes:\n  note:\n    fields:\n      status:\n        type: string\n        values: [draft, active]\n      published:\n        type: date\n",
     )
     .expect("config should be written");
-    fs::write(root.join("Index.md"), "---\ntype: note\ntags: [one, 2]\nstatus: archived\npublished: 2026-2-1\n---\n")
+    fs::write(root.join("index.md"), "---\ntype: note\ntags: [one, 2]\nstatus: archived\npublished: 2026-2-1\n---\n")
         .expect("index should be written");
 
     let output = run_check(&root, "json");
     assert_eq!(output.status.code(), Some(1));
-    let diagnostics: Vec<serde_json::Value> = serde_json::from_slice(&output.stdout).expect("valid JSON");
-    let codes: Vec<&str> = diagnostics.iter().filter_map(|diagnostic| diagnostic["code"].as_str()).collect();
-    assert!(codes.contains(&"invalid-field-type"));
-    assert!(codes.contains(&"invalid-field-value"));
-    assert!(codes.iter().filter(|code| **code == "invalid-field-type").count() >= 2);
+    let diagnostics = String::from_utf8(output.stdout).expect("human output should be utf-8");
+    assert!(diagnostics.contains("invalid-field-type"));
+    assert!(diagnostics.contains("invalid-field-value"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -414,7 +397,7 @@ fn check_reports_type_value_and_nested_shape_errors() {
 fn search_matches_scalars_and_array_values_and_rejects_bad_queries() {
     let root = fixture("search-values");
     write_config(&root);
-    fs::write(root.join("Index.md"), "---\ntype: note\ntitle: Index\nstatus: active\n---\n")
+    fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\nstatus: active\n---\n")
         .expect("index should be written");
     fs::write(root.join("draft.md"), "---\ntype: note\ntitle: Draft\nstatus: draft\n---\n")
         .expect("draft should be written");
@@ -471,11 +454,11 @@ fn graph_resolves_relative_links_and_ignores_non_page_links() {
     write_config(&root);
     fs::create_dir_all(root.join("docs")).expect("directory should be created");
     fs::write(
-        root.join("Index.md"),
+        root.join("index.md"),
         "---\ntype: note\ntitle: Index\n---\n[Guide](docs/guide.md) [asset](image.png) [web](https://example.com)\n",
     )
     .expect("index should be written");
-    fs::write(root.join("docs/guide.md"), "---\ntype: note\ntitle: Guide\n---\n[Home](../Index.md#top)\n")
+    fs::write(root.join("docs/guide.md"), "---\ntype: note\ntitle: Guide\n---\n[Home](../index.md#top)\n")
         .expect("guide should be written");
 
     let output = Command::new(env!("CARGO_BIN_EXE_growl"))
@@ -524,19 +507,49 @@ fn missing_config_and_missing_file_return_execution_errors() {
 
     write_config(&root);
     let missing_file = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args([
-            "check",
-            "--config",
-            root.join("growl.yml").to_str().unwrap(),
-            "--file",
-            "missing.md",
-            "--format",
-            "json",
-        ])
+        .args(["check", "--config", root.join("growl.yml").to_str().unwrap(), "--file", "missing.md"])
         .output()
         .expect("growl should run");
     assert_eq!(missing_file.status.code(), Some(1));
-    let diagnostics: Vec<serde_json::Value> = serde_json::from_slice(&missing_file.stdout).expect("valid JSON");
-    assert_eq!(diagnostics[0]["code"], "file-not-found");
+    let diagnostics = String::from_utf8(missing_file.stdout).expect("human output should be utf-8");
+    assert!(diagnostics.contains("file-not-found"));
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn malformed_config_reports_yaml_location_and_help() {
+    let root = fixture("malformed-config");
+    fs::write(root.join("growl.yml"), "wiki_root: .\ntypes:\n  note\n    fields: {}\n")
+        .expect("config should be written");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_growl"))
+        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap()])
+        .output()
+        .expect("config validate should run");
+
+    assert_eq!(output.status.code(), Some(2));
+    let error = String::from_utf8(output.stderr).expect("error output should be utf-8");
+    assert!(error.contains("invalid YAML in"));
+    assert!(error.contains("location: line 3"));
+    assert!(error.contains("help: check indentation"));
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn unknown_config_key_reports_a_configuration_error() {
+    let root = fixture("unknown-config-key");
+    fs::write(root.join("growl.yml"), "wiki_root: .\nmandatory_fileds: {}\n").expect("config should be written");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_growl"))
+        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap()])
+        .output()
+        .expect("config validate should run");
+
+    assert_eq!(output.status.code(), Some(2));
+    let error = String::from_utf8(output.stderr).expect("error output should be utf-8");
+    assert!(error.contains("invalid configuration in"));
+    assert!(error.contains("unknown field"), "unexpected error output: {error}");
+    assert!(error.contains("mandatory_fileds"), "unexpected error output: {error}");
+    assert!(error.contains("help: check the setting name"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }

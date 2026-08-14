@@ -87,13 +87,13 @@ mod tests {
         let root = std::env::temp_dir().join(format!("grey-owl-workspace-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(root.join("raw")).expect("test directory should be created");
-        fs::write(root.join("Index.md"), "---\n{}\n---\n").expect("index should be written");
+        fs::write(root.join("index.md"), "---\n{}\n---\n").expect("index should be written");
         fs::write(root.join("raw/source.md"), "not frontmatter").expect("raw file should be written");
 
         let scan =
             Workspace::new(root.clone()).with_excludes(&["raw/**".to_string()]).scan().expect("scan should succeed");
         assert_eq!(scan.documents.len(), 1);
-        assert_eq!(scan.documents[0].relative_file_path_from_wiki_root, "Index.md");
+        assert_eq!(scan.documents[0].relative_file_path_from_wiki_root, "index.md");
         assert!(scan.diagnostics.is_empty());
 
         fs::remove_dir_all(root).expect("test directory should be removed");

@@ -1,49 +1,36 @@
-use std::str::FromStr;
-
 use growl_core::diagnostic::Diagnostic;
 
-#[derive(Clone, Copy)]
-pub enum OutputFormat {
-    Human,
-    Json,
-}
-
-impl FromStr for OutputFormat {
-    type Err = String;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value {
-            "human" => Ok(Self::Human),
-            "json" => Ok(Self::Json),
-            _ => Err(format!("unknown format '{value}'; expected 'human' or 'json'")),
-        }
-    }
-}
-
-pub fn print_diagnostics(diagnostics: &[Diagnostic], format: OutputFormat) -> Result<(), String> {
-    match format {
-        OutputFormat::Human => {
-            if diagnostics.is_empty() {
-                println!("OK: no issues found");
-            } else {
-                for diagnostic in diagnostics {
-                    let path = diagnostic.path.as_deref().unwrap_or("-");
-                    println!("{} [{}] {}: {}", path, diagnostic.code, severity_name(diagnostic), diagnostic.message);
-                }
-                println!("{} diagnostic(s)", diagnostics.len());
+pub fn print_diagnostics(diagnostics: &[Diagnostic]) {
+    if diagnostics.is_empty() {
+        println!("OK: no issues found");
+    } else {
+        println!("Found {} diagnostic(s):", diagnostics.len());
+        println!();
+        for diagnostic in diagnostics {
+            println!("{}: [{}]", severity_name(diagnostic), diagnostic.code);
+            if let Some(path) = diagnostic.path.as_deref() {
+                println!("  path: {path}");
             }
-        }
-        OutputFormat::Json => {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(diagnostics)
-                    .map_err(|error| format!("cannot serialize diagnostics: {error}"))?
-            );
+            println!("  message: {}", diagnostic.message);
+            if let Some(help) = diagnostic_help(diagnostic) {
+                println!("  help: {help}");
+            }
+            println!();
         }
     }
-    Ok(())
 }
 
 fn severity_name(diagnostic: &Diagnostic) -> &'static str {
     if diagnostic.is_error() { "error" } else { "info" }
+}
+
+fn diagnostic_help(diagnostic: &Diagnostic) -> Option<&'static str> {
+    match diagnostic.code.as_str() {
+        "config-values-require-string" => Some("use 'values' only with type: string"),
+        "config-items-require-array" => Some("use 'items' only with type: array"),
+        "config-fields-require-object" => Some("use 'fields' only with type: object"),
+        "config-growl-version-missing" => Some("add growl_version: 0.1.0 to the configuration"),
+        "config-growl-version-incompatible" => Some("set growl_version to a version supported by this binary"),
+        _ => None,
+    }
 }

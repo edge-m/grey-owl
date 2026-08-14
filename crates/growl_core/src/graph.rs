@@ -89,7 +89,7 @@ impl WikiGraph {
         }
 
         let mut reachable = HashSet::new();
-        let mut queue = VecDeque::from(["Index"]);
+        let mut queue = VecDeque::from(["index"]);
         while let Some(id) = queue.pop_front() {
             if !reachable.insert(id) {
                 continue;
@@ -101,7 +101,7 @@ impl WikiGraph {
 
         let mut orphan_pages = nodes
             .iter()
-            .filter(|node| !incoming.contains_key(node.id.as_str()) && node.id != "Index")
+            .filter(|node| !incoming.contains_key(node.id.as_str()) && node.id != "index")
             .map(|node| node.id.clone())
             .collect::<Vec<_>>();
         let mut unreachable_pages = nodes
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn builds_edges_and_reachability() {
-        let index = parse("Index.md".into(), "---\n{}\n---\n[Note](note.md)\n").unwrap();
+        let index = parse("index.md".into(), "---\n{}\n---\n[Note](note.md)\n").unwrap();
         let note = parse("note.md".into(), "---\n{}\n---\n[Missing](missing.md)\n").unwrap();
         let orphan = parse("orphan.md".into(), "---\n{}\n---\n").unwrap();
         let graph = WikiGraph::from_scan(&ScanResult { documents: vec![index, note, orphan], diagnostics: vec![] });

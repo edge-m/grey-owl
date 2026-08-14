@@ -4,7 +4,6 @@ use clap::Args as ClapArgs;
 
 use crate::output;
 
-use super::check::Format;
 use super::context;
 
 /// SemVer range of configuration-generating growl versions accepted by this binary.
@@ -14,15 +13,13 @@ const COMPATIBLE_GROWL_VERSION_RANGE: &str = ">=0.1.0, <0.2.0";
 pub struct ValidateArgs {
     #[arg(long, help = "YAML configuration file")]
     pub config: Option<PathBuf>,
-    #[arg(long, value_enum, default_value_t = Format::Human, help = "Diagnostic output format")]
-    pub format: Format,
 }
 
 pub fn validate(args: &ValidateArgs) -> Result<u8, String> {
     let config_context = context::load(args.config.as_deref())?;
     let mut diagnostics = growl_core::validation::lint_config::lint(config_context.config());
     diagnostics.extend(version_diagnostics(config_context.config().growl_version.as_deref()));
-    output::print_diagnostics(&diagnostics, args.format.into())?;
+    output::print_diagnostics(&diagnostics);
 
     Ok(if diagnostics.iter().any(|diagnostic| diagnostic.is_error()) { 1 } else { 0 })
 }

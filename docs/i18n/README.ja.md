@@ -2,7 +2,7 @@
 
 ![Grey Owl logo](../img/wide.webp)
 
-Grey Owlは、構造化されたMarkdown Wiki向けの高速な設定駆動型バリデーターです。YAML frontmatterを検証し、人間向けまたはJSON形式で診断結果を出力します。
+Grey Owlは、構造化されたMarkdown Wiki向けの高速な設定駆動型バリデーターです。YAML frontmatterを検証し、人間向けの診断結果を出力します。
 
 プロジェクト名とライブラリ名は`grey-owl`、CLI実行ファイル名は`growl`です。
 
@@ -16,7 +16,7 @@ Grey Owlは、構造化されたMarkdown Wiki向けの高速な設定駆動型�
 - YAML frontmatterの解析
 - 必須フィールド、文書種別、値の型、許可値の検証
 - 識別子の欠落と重複の検出
-- 人間向けまたはJSON形式での診断出力
+- 人間向けの診断出力
 - スクリプトやCIで利用できる終了コード
 - 初期設定ファイルとAgent Skillの生成
 - Agent向けの導入手順の表示
@@ -129,20 +129,20 @@ config_lint:
 ```text
 growl init
 growl onboard
-growl config validate [--config <file>] [--format human|json]
+growl config validate [--config <file>]
 growl graph [--config <file>]
 growl schema [--config <file>] [--format text|json]
 growl maintain [--config <file>] [--stale-before YYYY-MM-DD] [--dry-run] [--format human|json]
 growl overview directories [--config <file>] [--statistics]
 growl overview types [--config <file>] [--statistics] [--type <type>]
 growl search [--config <file>] --query <query>
-growl check [--config <file>] [--file <path>] [--format human|json]
+growl check [--config <file>] [--file <path>]
 growl skill <output-directory>
 ```
 
 `--config`を省略した場合、コマンドはカレントディレクトリの`growl.yml`を探し、
 そこから`wiki_root`を解決します。`--file`なしの`check`はWiki全体を検証し、
-`Index.md`から到達できないページも検出します。
+`index.md`から到達できないページも検出します。
 
 `growl skill`は静的なAgent Skillを次の場所へ出力します。
 

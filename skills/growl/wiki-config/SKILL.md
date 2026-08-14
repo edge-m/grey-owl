@@ -89,8 +89,8 @@ dates, booleans, or YAML syntax. Keep user-provided ordering where possible.
 After writing, run:
 
 ```text
-growl config lint --config <path> --format json
-growl check --config <path> --format json
+growl config validate --config <path>
+growl check --config <path>
 ```
 
 If the Wiki is empty or intentionally incomplete, distinguish configuration
@@ -98,7 +98,7 @@ errors from document validation diagnostics. Fix configuration errors before
 reporting success. For an update, also run a focused check when available:
 
 ```text
-growl check --config <path> --file <path> --format json
+growl check --config <path> --file <path>
 ```
 
 Report the written path, the final choices, commands run, and any remaining

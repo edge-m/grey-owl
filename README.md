@@ -4,7 +4,7 @@
 
 Grey Owl is a fast, configuration-driven validator for structured Markdown
 wikis. It checks YAML frontmatter and reports actionable diagnostics in human-
-readable or JSON form.
+readable form.
 
 The project and library are named `grey-owl`; `growl` is the CLI binary.
 
@@ -21,7 +21,7 @@ product.
 - Parses YAML frontmatter
 - Validates required fields, document types, value types, and allowed values
 - Detects missing and duplicate identifiers
-- Reports diagnostics as human-readable text or JSON
+- Reports diagnostics as human-readable text
 - Provides stable exit codes for scripts and CI
 - Generates a starter configuration and an Agent Skill
 - Prints an Agent onboarding guide
@@ -154,20 +154,20 @@ compatible `growl` version range.
 ```text
 growl init
 growl onboard
-growl config validate [--config <file>] [--format human|json]
+growl config validate [--config <file>]
 growl graph [--config <file>]
 growl schema [--config <file>] [--format text|json]
 growl maintain [--config <file>] [--stale-before YYYY-MM-DD] [--dry-run] [--format human|json]
 growl overview directories [--config <file>] [--statistics]
 growl overview types [--config <file>] [--statistics] [--type <type>]
 growl search [--config <file>] --query <query>
-growl check [--config <file>] [--file <path>] [--format human|json]
+growl check [--config <file>] [--file <path>]
 growl skill <output-directory>
 ```
 
 When `--config` is omitted, commands look for `growl.yml` in the current
 directory and resolve `wiki_root` from it. `check` without `--file` validates
-the whole wiki, including pages that cannot be reached from `Index.md`.
+the whole wiki, including pages that cannot be reached from `index.md`.
 
 `growl skill` writes the static Agent Skill to:
 

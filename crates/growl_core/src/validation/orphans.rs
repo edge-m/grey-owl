@@ -4,7 +4,7 @@ use crate::diagnostic::Diagnostic;
 use crate::link_resolver::OutgoingTarget;
 use crate::workspace::ScanResult;
 
-/// Find Markdown pages that cannot be reached from the wiki-root `Index.md`.
+/// Find Markdown pages that cannot be reached from the wiki-root `index.md`.
 pub fn find(scan: &ScanResult) -> Vec<Diagnostic> {
     let pages: HashSet<String> = scan.documents.iter().map(|document| document.page_id()).collect();
     let mut links = HashMap::<String, Vec<String>>::new();
@@ -23,7 +23,7 @@ pub fn find(scan: &ScanResult) -> Vec<Diagnostic> {
     }
 
     let mut visited = HashSet::new();
-    let mut stack = vec!["Index".to_string()];
+    let mut stack = vec!["index".to_string()];
     while let Some(page) = stack.pop() {
         if !visited.insert(page.clone()) {
             continue;
@@ -43,7 +43,7 @@ pub fn find(scan: &ScanResult) -> Vec<Diagnostic> {
             Diagnostic::error(
                 "orphan-page",
                 Some(document.relative_file_path_from_wiki_root.clone()),
-                "page is not reachable from Index.md",
+                "page is not reachable from index.md",
             )
         })
         .collect()

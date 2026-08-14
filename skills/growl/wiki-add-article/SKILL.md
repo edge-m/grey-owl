@@ -11,8 +11,8 @@ does not silently create, move, or delete files.
 3. Select a configured destination with `growl overview directories`.
 4. Create the Markdown article using the required frontmatter. Preserve the
    source-to-article relationship when the user requires traceability.
-5. Validate only the new file with `growl check --file <path> --format json`.
-6. Run `growl check --format json` for the whole wiki.
+5. Validate only the new file with `growl check --file <path>`.
+6. Run `growl check` for the whole wiki.
 7. Report the path, selected type, validation diagnostics, and any remaining
    broken links or orphan-page diagnostics.
 

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)]
 pub struct WikiLintConfig {
     /// Markdown paths to exclude, relative to the wiki root.
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -64,6 +65,7 @@ fn matches_glob_bytes(pattern: &[u8], path: &[u8]) -> bool {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)]
 pub struct ConfigLintConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_nesting_depth: Option<usize>,
@@ -71,6 +73,7 @@ pub struct ConfigLintConfig {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)]
 pub struct DirectoryConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -80,6 +83,7 @@ pub struct DirectoryConfig {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)]
 pub struct TypeConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -103,6 +107,7 @@ pub struct MandatoryFieldRule {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct FieldRule {
     #[serde(rename = "type")]
     pub value_type: ValueType,

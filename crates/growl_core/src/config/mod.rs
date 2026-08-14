@@ -13,6 +13,7 @@ pub use schema::{
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     /// Version of growl that generated this configuration.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -92,7 +93,22 @@ impl Config {
     pub fn from_path(path: &Path) -> Result<Self, String> {
         let content =
             fs::read_to_string(path).map_err(|error| format!("cannot read config {}: {error}", path.display()))?;
-        serde_yaml::from_str(&content).map_err(|error| format!("cannot parse config {}: {error}", path.display()))
+        serde_yaml::from_str(&content).map_err(|error| {
+            let rendered = error.to_string();
+            let is_unknown_field = rendered.contains("unknown field");
+            let message = rendered.split_once(" at line ").map_or(rendered.as_str(), |(message, _)| message);
+            let location = error.location().map_or_else(
+                || "location: unavailable".to_string(),
+                |location| format!("location: line {}, column {}", location.line(), location.column()),
+            );
+            let title = if is_unknown_field { "invalid configuration" } else { "invalid YAML" };
+            let help = if is_unknown_field {
+                "check the setting name against the supported configuration keys"
+            } else {
+                "check indentation and `key: value` syntax"
+            };
+            format!("{title} in {}\n  {location}\n  message: {message}\n  help: {help}", path.display())
+        })
     }
 
     pub fn wiki_root_path(&self, config_path: &Path) -> Option<PathBuf> {
