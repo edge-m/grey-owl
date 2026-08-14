@@ -34,7 +34,9 @@ struct Candidate {
 
 pub fn run(args: &Args) -> Result<u8, String> {
     let context = context::load(args.config.as_deref())?;
-    let scan = growl_core::workspace::Workspace::new(context.wiki_root().to_path_buf()).scan()?;
+    let scan = growl_core::workspace::Workspace::new(context.wiki_root().to_path_buf())
+        .with_excludes(&context.config().wiki_lint.exclude)
+        .scan()?;
     let graph = growl_core::graph::WikiGraph::from_scan(&scan);
     let mut candidates = Vec::new();
 

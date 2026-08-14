@@ -12,7 +12,9 @@ pub struct Args {
 
 pub fn run(args: &Args) -> Result<u8, String> {
     let config_context = context::load(args.config.as_deref())?;
-    let scanned = growl_core::workspace::Workspace::new(config_context.wiki_root().to_path_buf()).scan()?;
+    let scanned = growl_core::workspace::Workspace::new(config_context.wiki_root().to_path_buf())
+        .with_excludes(&config_context.config().wiki_lint.exclude)
+        .scan()?;
     let graph = growl_core::graph::WikiGraph::from_scan(&scanned);
     let json = serde_json::to_string_pretty(&graph).map_err(|error| format!("cannot serialize graph: {error}"))?;
     println!("{json}");

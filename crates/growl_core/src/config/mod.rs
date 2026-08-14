@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 pub use schema::{
     ConfigLintConfig, DirectoryConfig, FieldRule, MandatoryFieldRule, TypeConfig, ValueType, WikiLintConfig,
+    matches_glob,
 };
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]

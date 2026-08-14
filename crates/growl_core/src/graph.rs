@@ -123,9 +123,9 @@ mod tests {
 
     #[test]
     fn builds_edges_and_reachability() {
-        let index = parse("Index.md".into(), "---\n---\n[Note](note.md)\n").unwrap();
-        let note = parse("note.md".into(), "---\n---\n[Missing](missing.md)\n").unwrap();
-        let orphan = parse("orphan.md".into(), "---\n---\n").unwrap();
+        let index = parse("Index.md".into(), "---\n{}\n---\n[Note](note.md)\n").unwrap();
+        let note = parse("note.md".into(), "---\n{}\n---\n[Missing](missing.md)\n").unwrap();
+        let orphan = parse("orphan.md".into(), "---\n{}\n---\n").unwrap();
         let graph = WikiGraph::from_scan(&ScanResult { documents: vec![index, note, orphan], diagnostics: vec![] });
 
         assert_eq!(graph.edges.len(), 1);

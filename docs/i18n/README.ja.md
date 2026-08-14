@@ -113,13 +113,15 @@ types:
   note:
     description: 一般的なノート
 
-wiki_lint: {}
+wiki_lint:
+  exclude:
+    - raw/**
 config_lint:
   max_nesting_depth: 1
 ```
 
 未知のfrontmatterフィールドは保持され、エラーにはなりません。ディレクトリ設定は説明専用で、ネストできます。設定したWikiルートを使う場合は`growl check --config ./growl.yml`を実行します。`--config`は設定ファイル自体のパス、`wiki_root`はその設定ファイル内で指定するWikiルートのパスです。
-`wiki_lint`にはWiki検証の設定、`config_lint`には設定ファイル自体を検証するための設定を記述します。配列やオブジェクトのフィールドは、それぞれ`items`や`fields`でネストして定義できます。
+`wiki_lint.exclude`には、`wiki_root`からの相対パスで、すべてのWiki検査（frontmatter、リンク、グラフ、孤立ページ検出）から除外するMarkdownパスを指定できます。`*`、`?`、`**`が使えます。`config_lint`には設定ファイル自体を検証するための設定を記述します。配列やオブジェクトのフィールドは、それぞれ`items`や`fields`でネストして定義できます。
 `growl_version`には設定を生成した`growl`のバージョンが記録されます。`growl config validate`では、設定を生成したバージョンが現在の`growl`の互換範囲に含まれるか確認します。
 
 ## コマンド

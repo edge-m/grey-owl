@@ -183,7 +183,7 @@ pub fn values(frontmatter: &Mapping) -> BTreeMap<String, &Value> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse;
+    use super::{normalize_relative_path, page_id, parse};
 
     #[test]
     fn extracts_markdown_inline_links_without_retaining_body() {

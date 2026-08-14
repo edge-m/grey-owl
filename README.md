@@ -129,7 +129,9 @@ types:
   note:
     description: A general-purpose note
 
-wiki_lint: {}
+wiki_lint:
+  exclude:
+    - raw/**
 config_lint:
   max_nesting_depth: 1
 ```
@@ -138,7 +140,9 @@ Unknown frontmatter fields are preserved and do not produce an error. Directory
 entries are descriptive only and may be nested. To use the configured wiki root,
 run `growl check --config ./growl.yml`; `--config` is the path to the
 configuration file, while `wiki_root` is the path inside that configuration.
-`wiki_lint` contains wiki validation settings, while `config_lint` contains
+`wiki_lint.exclude` lists Markdown paths, relative to `wiki_root`, that are
+excluded from all wiki inspection, including frontmatter, links, graph, and
+orphan-page checks. Patterns support `*`, `?`, and `**`. `config_lint` contains
 settings for validating the configuration schema itself. Nested array and
 object fields use `items` and `fields` respectively.
 `growl_version` records the version of `growl` that generated the configuration.

@@ -144,7 +144,7 @@ pub fn types(args: &TypeArgs) -> Result<u8, String> {
 }
 
 fn scan(context: &ConfigContext) -> Result<ScanResult, String> {
-    Workspace::new(context.wiki_root().to_path_buf()).scan()
+    Workspace::new(context.wiki_root().to_path_buf()).with_excludes(&context.config().wiki_lint.exclude).scan()
 }
 
 fn directory_view(config: &DirectoryConfig, path: &str, scan: Option<&ScanResult>) -> DirectoryView {

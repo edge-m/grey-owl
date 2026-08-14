@@ -32,7 +32,9 @@ struct SearchResult {
 pub fn run(args: &Args) -> Result<u8, String> {
     let config_context = context::load(args.config.as_deref())?;
     let query = Query::parse(&args.query)?;
-    let scan = Workspace::new(config_context.wiki_root().to_path_buf()).scan()?;
+    let scan = Workspace::new(config_context.wiki_root().to_path_buf())
+        .with_excludes(&config_context.config().wiki_lint.exclude)
+        .scan()?;
     let results = scan
         .documents
         .iter()

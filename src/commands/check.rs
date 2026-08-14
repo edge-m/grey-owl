@@ -41,12 +41,15 @@ pub fn run(args: &Args) -> Result<u8, String> {
             return Ok(2);
         }
     }
-    let scanned = Workspace::new(config_context.wiki_root().to_path_buf()).scan()?;
+    let scanned = Workspace::new(config_context.wiki_root().to_path_buf())
+        .with_excludes(&config_context.config().wiki_lint.exclude)
+        .scan()?;
     let mut diagnostics = validation::lint_wiki::lint(&scanned, config_context.config());
     diagnostics.extend(validation::orphans::find(&scanned));
     if let Some(file) = &args.file {
         let target = file.to_string_lossy().replace('\\', "/");
-        if !scanned.documents.iter().any(|document| document.relative_file_path_from_wiki_root == target)
+        if !config_context.config().wiki_lint.is_excluded(&target)
+            && !scanned.documents.iter().any(|document| document.relative_file_path_from_wiki_root == target)
             && !scanned.diagnostics.iter().any(|diagnostic| diagnostic.path.as_deref() == Some(target.as_str()))
         {
             diagnostics.push(growl_core::diagnostic::Diagnostic::error(
