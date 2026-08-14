@@ -288,6 +288,10 @@ fn init_command_writes_default_config() {
     assert!(config.contains("wiki_lint:"));
     assert!(config.contains("config_lint:"));
     assert!(config.contains("max_nesting_depth: 1"));
+    assert!(config.contains("Agents should usually set it to 14 days after creation"));
+    assert!(config.contains("**/.*"));
+    assert!(config.contains("**/README.md"));
+    assert!(config.contains("raw/**"));
     assert!(config.contains("# Wiki root path used by Grey Owl commands.\nwiki_root:"));
     assert!(config.contains("\n\n# Directory structure and descriptions.\ndirectories:"));
     assert!(config.contains("\n\n# Fields required on every document.\nmandatory_fields:"));

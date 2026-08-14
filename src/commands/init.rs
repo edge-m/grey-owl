@@ -2,7 +2,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use clap::Args as ClapArgs;
-use growl_core::config::{Config, ConfigLintConfig, DirectoryConfig, MandatoryFieldRule, TypeConfig, ValueType};
+use growl_core::config::{
+    Config, ConfigLintConfig, DirectoryConfig, MandatoryFieldRule, TypeConfig, ValueType, WikiLintConfig,
+};
 use indexmap::IndexMap;
 
 const CONFIG_NAME: &str = "growl.yml";
@@ -105,15 +107,20 @@ pub fn run(_args: &Args) -> Result<u8, String> {
             ),
             (
                 "stale_after".to_string(),
-                mandatory_field(ValueType::Date, "Date on or after which the content is considered stale."),
+                mandatory_field(
+                    ValueType::Date,
+                    "Date on or after which the content is considered stale. Agents should usually set it to 14 days after creation, adjusting for how quickly the information changes.",
+                ),
             ),
         ]),
         types: IndexMap::from([(
             "note".to_string(),
             TypeConfig { description: Some("A general-purpose note".to_string()), fields: IndexMap::new() },
         )]),
+        wiki_lint: WikiLintConfig {
+            exclude: vec!["**/.*".to_string(), "**/README.md".to_string(), "raw/**".to_string()],
+        },
         config_lint: ConfigLintConfig { max_nesting_depth: Some(1) },
-        ..Default::default()
     };
     let yaml =
         serde_yaml::to_string(&config).map_err(|error| format!("cannot serialize default configuration: {error}"))?;

@@ -124,6 +124,7 @@ mandatory_fields:
         type: string
   stale_after:
     type: date
+    description: Date on or after which the content is considered stale. Agents should usually set it to 14 days after creation, adjusting for how quickly the information changes.
 
 types:
   note:
@@ -131,6 +132,8 @@ types:
 
 wiki_lint:
   exclude:
+    - '**/.*'
+    - '**/README.md'
     - raw/**
 config_lint:
   max_nesting_depth: 1
@@ -142,7 +145,8 @@ run `growl check --config ./growl.yml`; `--config` is the path to the
 configuration file, while `wiki_root` is the path inside that configuration.
 `wiki_lint.exclude` lists Markdown paths, relative to `wiki_root`, that are
 excluded from all wiki inspection, including frontmatter, links, graph, and
-orphan-page checks. Patterns support `*`, `?`, and `**`. `config_lint` contains
+orphan-page checks. `growl init` excludes dot-prefixed paths, `README.md`, and
+`raw/**` by default. Patterns support `*`, `?`, and `**`. `config_lint` contains
 settings for validating the configuration schema itself. Nested array and
 object fields use `items` and `fields` respectively.
 `growl_version` records the version of `growl` that generated the configuration.
