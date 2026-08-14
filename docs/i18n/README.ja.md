@@ -19,6 +19,7 @@ Grey Owlは、構造化されたMarkdown Wiki向けの高速な設定駆動型�
 - 人間向けまたはJSON形式での診断出力
 - スクリプトやCIで利用できる終了コード
 - 初期設定ファイルとAgent Skillの生成
+- Agent向けの導入手順の表示
 
 Markdown本文は不透明なコンテンツとして扱い、意味や文章品質の評価は行いません。
 
@@ -37,14 +38,36 @@ cd path/to/wiki
 growl init
 ```
 
-Wikiを検証します。
+Agent Skillを生成し、AI Agentが利用できる場所に配置します。
 
 ```sh
-growl check --config ./growl.yml
-growl check --config ./growl.yml --format json
+growl skill <agent-skills-directory>
+```
+
+ファイルを変更せずに、セットアップ全体の流れを表示することもできます。
+
+```sh
+growl onboard
 ```
 
 `growl init`は`growl.yml`を作成します。既存のファイルは上書きしません。
+
+### AI AgentでWikiを運用する流れ
+
+1. `growl init`でWikiを初期化し、`growl.yml`にWikiルート、ディレクトリ、
+   文書種別、必須frontmatterを設定します。生成したSkillとWikiへのアクセスを
+   AI Agentに渡します。
+2. 記事の追加を依頼すると、AgentがルールとWikiの状態を確認し、文書種別と配置先を
+   選び、必須のYAML frontmatter付きMarkdownを作成します。
+3. Agentが`growl check --file <path>`で新しい記事を検証した後、
+   `growl check`でWiki全体を検証し、エラー、リンク切れ、孤立ページを修正します。
+
+人間は基本的にAI Agentと対話し、`growl`コマンドはAgentがWikiを調査・検証するための
+ツールとして使います。
+
+また、`growl onboard`を実行すると表示された手順をAgentに渡せます。Agentは
+`wiki-config` Skillを使って対話的に`growl.yml`を設計・初期化し、その後ほかの
+Skillを使ってWikiの構築、検索、保守を行えます。
 
 ## 設定
 
@@ -103,6 +126,7 @@ config_lint:
 
 ```text
 growl init
+growl onboard
 growl config validate [--config <file>] [--format human|json]
 growl graph [--config <file>]
 growl schema [--config <file>] [--format text|json]
@@ -122,14 +146,15 @@ growl skill <output-directory>
 
 ```text
 <output-directory>/growl/SKILL.md
+<output-directory>/growl/wiki-config/SKILL.md
 <output-directory>/growl/wiki-overview/SKILL.md
 <output-directory>/growl/wiki-add-article/SKILL.md
 <output-directory>/growl/wiki-maintenance/SKILL.md
 <output-directory>/growl/wiki-search/SKILL.md
 ```
 
-生成されるSkillは現在、Wiki全体像の取得、記事追加後の検証、メンテナンス確認、
-検索の各ワークフローについて、概要と明示的なTODOを提供します。
+生成されるSkillは、Agentによる設定、Wiki全体像の把握、記事追加、検索、保守の
+ワークフローを提供します。
 
 終了コード：
 

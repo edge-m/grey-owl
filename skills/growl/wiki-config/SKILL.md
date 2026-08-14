@@ -57,8 +57,8 @@ Before writing anything, present a compact summary containing:
 - type-specific fields, optional fields, nested shapes, and allowed values;
 - `wiki_lint` and `config_lint` settings.
 
-Ask for explicit confirmation such as “この内容で `growl.yml` を作成して
-よいですか？” Do not create or overwrite a file before confirmation. If an
+Ask for explicit confirmation such as “Shall I create `growl.yml` with these
+settings?” Do not create or overwrite a file before confirmation. If an
 existing file would be overwritten, call that out separately and require
 confirmation for the overwrite.
 

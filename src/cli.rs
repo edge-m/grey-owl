@@ -1,6 +1,6 @@
 use clap::{CommandFactory, Parser, Subcommand};
 
-use crate::commands::{check, config, graph, init, maintain, overview, schema, search, skill};
+use crate::commands::{check, config, graph, init, maintain, onboard, overview, schema, search, skill};
 
 #[derive(Debug, Parser)]
 #[command(name = "growl", about = "Grey Owl wiki validator")]
@@ -25,6 +25,8 @@ enum Command {
     Schema(schema::Args),
     #[command(about = "Find maintenance candidates without changing files")]
     Maintain(maintain::Args),
+    #[command(about = "Explain how to start using Grey Owl with an Agent")]
+    Onboard(onboard::Args),
     #[command(about = "Write the Grey Owl Agent Skill")]
     Skill(skill::Args),
     #[command(about = "Search structured frontmatter")]
@@ -64,6 +66,7 @@ pub fn run(args: Vec<String>) -> Result<u8, String> {
         Some(Command::Graph(args)) => graph::run(&args),
         Some(Command::Schema(args)) => schema::run(&args),
         Some(Command::Maintain(args)) => maintain::run(&args),
+        Some(Command::Onboard(args)) => onboard::run(&args),
         Some(Command::Skill(args)) => skill::run(&args),
         Some(Command::Search(args)) => search::run(&args),
         None => {

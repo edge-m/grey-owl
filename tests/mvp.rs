@@ -254,9 +254,28 @@ fn skill_command_writes_skill_file() {
     let skill = fs::read_to_string(&skill_path).expect("skill should be written");
     assert!(skill.contains("# Grey Owl Wiki Skills"));
     assert!(root.join("growl/wiki-overview/SKILL.md").is_file());
+    assert!(root.join("growl/wiki-config/SKILL.md").is_file());
     assert!(root.join("growl/wiki-add-article/SKILL.md").is_file());
     assert!(root.join("growl/wiki-maintenance/SKILL.md").is_file());
     assert!(root.join("growl/wiki-search/SKILL.md").is_file());
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn onboard_command_prints_agent_workflow_without_writing_files() {
+    let root = fixture("onboard");
+    let output = Command::new(env!("CARGO_BIN_EXE_growl"))
+        .arg("onboard")
+        .current_dir(&root)
+        .output()
+        .expect("growl should run");
+
+    assert!(output.status.success());
+    let text = String::from_utf8(output.stdout).expect("onboard output should be UTF-8");
+    assert!(text.contains("growl skill <agent-skills-directory>"));
+    assert!(text.contains("wiki-config Skill"));
+    assert!(!root.join("growl.yml").exists());
+    assert_eq!(fs::read_dir(&root).expect("fixture should be readable").count(), 0);
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -480,6 +499,7 @@ fn generated_skills_are_english_and_contain_no_todos() {
     assert!(output.status.success());
     for path in [
         "growl/SKILL.md",
+        "growl/wiki-config/SKILL.md",
         "growl/wiki-overview/SKILL.md",
         "growl/wiki-add-article/SKILL.md",
         "growl/wiki-maintenance/SKILL.md",

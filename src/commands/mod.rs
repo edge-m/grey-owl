@@ -4,6 +4,7 @@ mod context;
 pub mod graph;
 pub mod init;
 pub mod maintain;
+pub mod onboard;
 pub mod overview;
 pub mod schema;
 pub mod search;

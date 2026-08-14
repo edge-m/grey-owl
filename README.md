@@ -24,6 +24,7 @@ product.
 - Reports diagnostics as human-readable text or JSON
 - Provides stable exit codes for scripts and CI
 - Generates a starter configuration and an Agent Skill
+- Prints an Agent onboarding guide
 
 Markdown body text is treated as opaque content; Grey Owl does not judge its
 meaning or writing quality.
@@ -43,14 +44,39 @@ cd path/to/wiki
 growl init
 ```
 
-Validate the wiki:
+Generate the Agent Skills and make them available to your AI Agent:
 
 ```sh
-growl check --config ./growl.yml
-growl check --config ./growl.yml --format json
+growl skill <agent-skills-directory>
+```
+
+To print the complete setup flow without changing any files:
+
+```sh
+growl onboard
 ```
 
 `growl init` creates `growl.yml` and never overwrites an existing file.
+
+### AI Agent wiki workflow
+
+1. Prepare the wiki with `growl init`, adjust `growl.yml` to define the wiki
+   root, directories, document types, and required frontmatter, then give the
+   generated Skills and wiki access to your AI Agent.
+2. When asked to add an article, the Agent inspects the rules and current wiki
+   state, selects a configured type and destination, and creates the Markdown
+   file with the required YAML frontmatter.
+3. The Agent validates the new file with `growl check --file <path>` and then
+   validates the complete wiki with `growl check`, fixing any reported errors,
+   broken links, or orphan pages.
+
+Alternatively, run `growl onboard` and give the displayed workflow to your
+Agent. The Agent can use `wiki-config` to design and initialize `growl.yml`
+through a guided conversation, then use the other Skills to build, search, and
+maintain the Wiki.
+
+Humans generally interact with the AI Agent; the `growl` commands are the
+Agent's tools for inspecting and validating the wiki.
 
 ## Configuration
 
@@ -123,6 +149,7 @@ compatible `growl` version range.
 
 ```text
 growl init
+growl onboard
 growl config validate [--config <file>] [--format human|json]
 growl graph [--config <file>]
 growl schema [--config <file>] [--format text|json]
@@ -142,15 +169,15 @@ the whole wiki, including pages that cannot be reached from `Index.md`.
 
 ```text
 <output-directory>/growl/SKILL.md
+<output-directory>/growl/wiki-config/SKILL.md
 <output-directory>/growl/wiki-overview/SKILL.md
 <output-directory>/growl/wiki-add-article/SKILL.md
 <output-directory>/growl/wiki-maintenance/SKILL.md
 <output-directory>/growl/wiki-search/SKILL.md
 ```
 
-The generated Skills currently provide outlines and explicit TODOs for the
-Wiki overview, article-addition validation, maintenance checks, and search
-workflows.
+The generated Skills provide workflows for configuring, understanding,
+building, searching, and maintaining a Wiki with an Agent.
 
 Exit codes:
 
