@@ -1,5 +1,7 @@
 use growl_core::diagnostic::Diagnostic;
 
+use crate::commands::validate;
+
 pub fn print_diagnostics(diagnostics: &[Diagnostic]) {
     if diagnostics.is_empty() {
         println!("OK: no issues found");
@@ -20,8 +22,42 @@ pub fn print_diagnostics(diagnostics: &[Diagnostic]) {
     }
 }
 
+pub fn print_validation(diagnostics: &[Diagnostic], details: bool, json: bool) {
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&validate::json_output(diagnostics, details))
+                .expect("validation output should be serializable")
+        );
+        return;
+    }
+
+    let summary = validate::summary(diagnostics);
+    println!("Validation summary");
+    println!("  errors: {}", summary.errors);
+    println!("  warnings: {}", summary.warnings);
+    println!("  infos: {}", summary.infos);
+    if summary.by_code.is_empty() {
+        println!("  diagnostics: none");
+    } else {
+        println!("  diagnostics by code:");
+        for (code, count) in &summary.by_code {
+            println!("    {code}: {count}");
+        }
+    }
+
+    if details && !diagnostics.is_empty() {
+        println!();
+        print_diagnostics(diagnostics);
+    }
+}
+
 fn severity_name(diagnostic: &Diagnostic) -> &'static str {
-    if diagnostic.is_error() { "error" } else { "info" }
+    match diagnostic.severity {
+        growl_core::diagnostic::Severity::Error => "error",
+        growl_core::diagnostic::Severity::Warning => "warning",
+        growl_core::diagnostic::Severity::Info => "info",
+    }
 }
 
 fn diagnostic_help(diagnostic: &Diagnostic) -> Option<&'static str> {
@@ -31,6 +67,7 @@ fn diagnostic_help(diagnostic: &Diagnostic) -> Option<&'static str> {
         "config-fields-require-object" => Some("use 'fields' only with type: object"),
         "config-growl-version-missing" => Some("add growl_version: 0.1.0 to the configuration"),
         "config-growl-version-incompatible" => Some("set growl_version to a version supported by this binary"),
+        "source-definition-ignored" => Some("set source_tracking.enabled to false to use a custom sources definition"),
         _ => None,
     }
 }

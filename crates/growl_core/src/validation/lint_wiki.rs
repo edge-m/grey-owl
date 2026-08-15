@@ -6,12 +6,110 @@ use crate::config::{Config, FieldRule, MandatoryFieldRule, ValueType};
 use crate::diagnostic::Diagnostic;
 use crate::document::{self, Document};
 use crate::link_resolver::OutgoingTarget;
+use crate::source;
 use crate::workspace::ScanResult;
 
 pub fn lint(scan: &ScanResult, config: &Config) -> Vec<Diagnostic> {
     let mut diagnostics = scan.diagnostics.clone();
     diagnostics.extend(scan.documents.iter().flat_map(|document| lint_document(document, config)));
     diagnostics.extend(lint_links(scan));
+    if config.source_tracking.enabled {
+        diagnostics.extend(lint_sources(scan));
+    }
+    diagnostics
+}
+
+fn lint_sources(scan: &ScanResult) -> Vec<Diagnostic> {
+    let mut diagnostics = Vec::new();
+    for document in &scan.documents {
+        let Some(items) = document.frontmatter.get(Value::String("sources".to_string())).and_then(Value::as_sequence)
+        else {
+            continue;
+        };
+        for item in items {
+            let Some(mapping) = item.as_mapping() else {
+                diagnostics.push(Diagnostic::error(
+                    "invalid-source-record",
+                    Some(document.relative_file_path_from_wiki_root.clone()),
+                    "each source must be an object with path and sha256",
+                ));
+                continue;
+            };
+            let Some(path) = mapping.get(Value::String("path".to_string())).and_then(Value::as_str) else {
+                diagnostics.push(Diagnostic::error(
+                    "invalid-source-record",
+                    Some(document.relative_file_path_from_wiki_root.clone()),
+                    "source record must contain a string path",
+                ));
+                continue;
+            };
+            let Some(hash) = mapping.get(Value::String("sha256".to_string())).and_then(Value::as_str) else {
+                diagnostics.push(Diagnostic::error(
+                    "invalid-source-record",
+                    Some(document.relative_file_path_from_wiki_root.clone()),
+                    "source record must contain a string sha256",
+                ));
+                continue;
+            };
+            if let Err(message) = source::normalize_path(path) {
+                diagnostics.push(Diagnostic::error(
+                    "invalid-source-record",
+                    Some(document.relative_file_path_from_wiki_root.clone()),
+                    message,
+                ));
+            } else if hash.len() != 64 || !hash.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                diagnostics.push(Diagnostic::error(
+                    "invalid-source-record",
+                    Some(document.relative_file_path_from_wiki_root.clone()),
+                    "source sha256 must be a 64-character hexadecimal hash",
+                ));
+            }
+        }
+    }
+    diagnostics
+}
+
+/// Verify source existence and recorded SHA-256 values against the resolved wiki root.
+pub fn lint_sources_at_root(scan: &ScanResult, wiki_root: &std::path::Path) -> Vec<Diagnostic> {
+    let mut diagnostics = Vec::new();
+    for document in &scan.documents {
+        let Some(items) = document.frontmatter.get(Value::String("sources".to_string())).and_then(Value::as_sequence)
+        else {
+            continue;
+        };
+        for item in items {
+            let Some(mapping) = item.as_mapping() else { continue };
+            let Some(path) = mapping.get(Value::String("path".to_string())).and_then(Value::as_str) else { continue };
+            let Some(recorded_hash) = mapping.get(Value::String("sha256".to_string())).and_then(Value::as_str) else {
+                continue;
+            };
+            let Ok(normalized_path) = source::normalize_path(path) else { continue };
+            let full_path = wiki_root.join(&normalized_path);
+            if !full_path.is_file() {
+                diagnostics.push(Diagnostic::error(
+                    "missing-source",
+                    Some(document.relative_file_path_from_wiki_root.clone()),
+                    format!("source file does not exist: {normalized_path}"),
+                ));
+                continue;
+            }
+            match source::sha256_file(&full_path) {
+                Ok(actual_hash) if actual_hash != recorded_hash => diagnostics.push(Diagnostic::error(
+                    "source-drift",
+                    Some(document.relative_file_path_from_wiki_root.clone()),
+                    format!(
+                        "source hash differs for {normalized_path} (recorded {recorded_hash}, current {actual_hash})"
+                    ),
+                )),
+                Err(message) => diagnostics.push(Diagnostic::error(
+                    "missing-source",
+                    Some(document.relative_file_path_from_wiki_root.clone()),
+                    message,
+                )),
+                _ => {}
+            }
+        }
+    }
     diagnostics
 }
 
@@ -44,6 +142,7 @@ fn lint_document(document: &Document, config: &Config) -> Vec<Diagnostic> {
         &document.relative_file_path_from_wiki_root,
         &document.frontmatter,
         &config.mandatory_fields,
+        config.source_tracking.enabled,
         &mut diagnostics,
     );
 
@@ -53,6 +152,7 @@ fn lint_document(document: &Document, config: &Config) -> Vec<Diagnostic> {
                 &document.relative_file_path_from_wiki_root,
                 &document.frontmatter,
                 &type_config.fields,
+                config.source_tracking.enabled,
                 &mut diagnostics,
             ),
             None if !config.types.is_empty() => diagnostics.push(Diagnostic::error(
@@ -68,10 +168,13 @@ fn lint_document(document: &Document, config: &Config) -> Vec<Diagnostic> {
 }
 
 fn lint_fields(
-    path: &str, frontmatter: &serde_yaml::Mapping, rules: &IndexMap<String, FieldRule>,
+    path: &str, frontmatter: &serde_yaml::Mapping, rules: &IndexMap<String, FieldRule>, ignore_sources: bool,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
     for (field, rule) in rules {
+        if ignore_sources && field == "sources" {
+            continue;
+        }
         match frontmatter.get(Value::String(field.clone())) {
             None if !rule.optional => diagnostics.push(Diagnostic::error(
                 "missing-required-field",
@@ -85,10 +188,13 @@ fn lint_fields(
 }
 
 fn lint_mandatory_fields(
-    path: &str, frontmatter: &serde_yaml::Mapping, rules: &IndexMap<String, MandatoryFieldRule>,
+    path: &str, frontmatter: &serde_yaml::Mapping, rules: &IndexMap<String, MandatoryFieldRule>, ignore_sources: bool,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
     for (field, rule) in rules {
+        if ignore_sources && field == "sources" {
+            continue;
+        }
         match frontmatter.get(Value::String(field.clone())) {
             None => diagnostics.push(Diagnostic::error(
                 "missing-required-field",
@@ -116,7 +222,7 @@ fn lint_value(path: &str, field: &str, value: &Value, rule: &FieldRule, diagnost
         }
     }
     if let Some(mapping) = value.as_mapping() {
-        lint_fields(&format!("{path}.{field}"), mapping, &rule.fields, diagnostics);
+        lint_fields(&format!("{path}.{field}"), mapping, &rule.fields, false, diagnostics);
     }
 }
 
@@ -138,7 +244,7 @@ fn lint_mandatory_value(
         }
     }
     if let Some(mapping) = value.as_mapping() {
-        lint_mandatory_fields(&format!("{path}.{field}"), mapping, &rule.fields, diagnostics);
+        lint_mandatory_fields(&format!("{path}.{field}"), mapping, &rule.fields, false, diagnostics);
     }
 }
 

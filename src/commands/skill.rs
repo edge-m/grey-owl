@@ -9,6 +9,7 @@ const SKILLS: &[(&str, &str)] = &[
     ("wiki-config/SKILL.md", include_str!("../../skills/growl/wiki-config/SKILL.md")),
     ("wiki-overview/SKILL.md", include_str!("../../skills/growl/wiki-overview/SKILL.md")),
     ("wiki-add-article/SKILL.md", include_str!("../../skills/growl/wiki-add-article/SKILL.md")),
+    ("wiki-ingest/SKILL.md", include_str!("../../skills/growl/wiki-ingest/SKILL.md")),
     ("wiki-maintenance/SKILL.md", include_str!("../../skills/growl/wiki-maintenance/SKILL.md")),
     ("wiki-search/SKILL.md", include_str!("../../skills/growl/wiki-search/SKILL.md")),
 ];

@@ -90,15 +90,15 @@ After writing, run:
 
 ```text
 growl config validate --config <path>
-growl check --config <path>
+growl validate --config <path>
 ```
 
 If the Wiki is empty or intentionally incomplete, distinguish configuration
 errors from document validation diagnostics. Fix configuration errors before
-reporting success. For an update, also run a focused check when available:
+reporting success. For an update, also run a focused validation when available:
 
 ```text
-growl check --config <path> --file <path>
+growl validate --config <path> --file <path>
 ```
 
 Report the written path, the final choices, commands run, and any remaining

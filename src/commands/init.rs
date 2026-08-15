@@ -16,6 +16,7 @@ const TOP_LEVEL_COMMENTS: &[(&str, &str)] = &[
     ("mandatory_fields:", "Fields required on every document."),
     ("types:", "Fields specific to each document type."),
     ("wiki_lint:", "Wiki validation settings."),
+    ("source_tracking:", "Validation settings for page references to raw sources."),
     ("config_lint:", "Configuration schema validation settings."),
 ];
 
@@ -83,16 +84,6 @@ pub fn run(_args: &Args) -> Result<u8, String> {
                 },
             ),
             (
-                "sources".to_string(),
-                MandatoryFieldRule {
-                    items: Some(Box::new(mandatory_field(
-                        ValueType::String,
-                        "A path to a source in raw or elsewhere.",
-                    ))),
-                    ..mandatory_field(ValueType::Array, "Raw paths or other sources the concept derives from.")
-                },
-            ),
-            (
                 "generated".to_string(),
                 MandatoryFieldRule {
                     fields: IndexMap::from([
@@ -121,6 +112,7 @@ pub fn run(_args: &Args) -> Result<u8, String> {
             exclude: vec!["**/.*".to_string(), "**/README.md".to_string(), "raw/**".to_string()],
         },
         config_lint: ConfigLintConfig { max_nesting_depth: Some(1) },
+        source_tracking: growl_core::config::SourceTrackingConfig { enabled: true },
     };
     let yaml =
         serde_yaml::to_string(&config).map_err(|error| format!("cannot serialize default configuration: {error}"))?;

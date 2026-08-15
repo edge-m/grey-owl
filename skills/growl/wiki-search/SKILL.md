@@ -10,7 +10,7 @@ falling back to Markdown body text.
 - Search Markdown body text with `rg` when structured search is insufficient.
 - Use `growl schema --format json` to confirm valid fields and types before
   constructing a query.
-- If search results will support a file change, run `growl check` afterward.
+- If search results will support a file change, run `growl validate` afterward.
 
 The current query syntax supports one `field:value` condition. Do not assume
 that Boolean operators or body-text search are supported by `growl search`.

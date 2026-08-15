@@ -33,9 +33,14 @@ types:
     .expect("config should be written");
 }
 
-fn run_check(root: &Path, _format: &str) -> std::process::Output {
+fn run_validate(root: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["check", "--config", root.join("growl.yml").to_str().expect("config path should be utf-8")])
+        .args([
+            "validate",
+            "--config",
+            root.join("growl.yml").to_str().expect("config path should be utf-8"),
+            "--details",
+        ])
         .output()
         .expect("growl should run")
 }
@@ -49,9 +54,62 @@ fn valid_wiki_returns_success() {
     fs::write(root.join("note.md"), "---\nid: welcome\ntype: note\ntitle: Welcome\nstatus: active\n---\n# Welcome\n")
         .expect("document should be written");
 
-    let output = run_check(&root, "json");
+    let output = run_validate(&root);
     assert!(output.status.success());
-    assert_eq!(output.stdout, b"OK: no issues found\n");
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Validation summary"));
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn validate_prints_summary_by_default_and_details_on_request() {
+    let root = fixture("validate-output");
+    write_config(&root);
+    fs::write(root.join("index.md"), "---\ntype: note\n---\n").expect("index should be written");
+
+    let config = root.join("growl.yml");
+    let summary = Command::new(env!("CARGO_BIN_EXE_growl"))
+        .args(["validate", "--config", config.to_str().unwrap()])
+        .output()
+        .expect("validate should run");
+    assert_eq!(summary.status.code(), Some(1));
+    let summary_text = String::from_utf8(summary.stdout).expect("summary should be utf-8");
+    assert!(summary_text.contains("Validation summary"));
+    assert!(summary_text.contains("missing-required-field: 1"));
+    assert!(!summary_text.contains("message:"));
+
+    let details = Command::new(env!("CARGO_BIN_EXE_growl"))
+        .args(["validate", "--config", config.to_str().unwrap(), "--details"])
+        .output()
+        .expect("validate details should run");
+    assert_eq!(details.status.code(), Some(1));
+    let details_text = String::from_utf8(details.stdout).expect("details should be utf-8");
+    assert!(details_text.contains("Validation summary"));
+    assert!(details_text.contains("message: required field 'title' is missing"));
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn source_tracking_checks_existence_and_hash_drift() {
+    let root = fixture("source-tracking");
+    fs::write(
+        root.join("growl.yml"),
+        "wiki_root: .\nsource_tracking:\n  enabled: true\nwiki_lint:\n  exclude: [raw/**]\nmandatory_fields:\n  type:\n    type: string\ntypes:\n  note:\n    fields: {}\n",
+    )
+    .expect("config should be written");
+    fs::create_dir_all(root.join("raw")).expect("raw directory should be created");
+    fs::write(root.join("raw/source.txt"), "abc").expect("source should be written");
+    fs::write(
+        root.join("index.md"),
+        "---\ntype: note\nsources:\n  - path: raw/source.txt\n    sha256: ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\n---\n",
+    )
+    .expect("page should be written");
+
+    let valid = run_validate(&root);
+    assert!(valid.status.success());
+    fs::write(root.join("raw/source.txt"), "changed").expect("source should be changed");
+    let drift = run_validate(&root);
+    assert_eq!(drift.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&drift.stdout).contains("source-drift"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -96,6 +154,26 @@ fn config_validate_validates_without_scanning_the_wiki() {
 
     assert!(output.status.success());
     assert_eq!(output.stdout, b"OK: no issues found\n");
+    fs::remove_dir_all(root).expect("fixture should be removed");
+}
+
+#[test]
+fn enabled_source_tracking_warns_and_ignores_custom_source_rules() {
+    let root = fixture("source-definition-warning");
+    fs::write(
+        root.join("growl.yml"),
+        "growl_version: 0.1.0\nwiki_root: .\nsource_tracking:\n  enabled: true\nmandatory_fields:\n  sources:\n    type: array\n    items:\n      type: string\ntypes: {}\n",
+    )
+    .expect("config should be written");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_growl"))
+        .args(["config", "validate", "--config", root.join("growl.yml").to_str().unwrap()])
+        .output()
+        .expect("config validate should run");
+    assert!(output.status.success());
+    let text = String::from_utf8(output.stdout).expect("output should be UTF-8");
+    assert!(text.contains("source-definition-ignored"));
+    assert!(text.contains("warning"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -153,8 +231,8 @@ fn schema_exports_configuration_for_agents() {
 }
 
 #[test]
-fn maintain_reports_candidates_without_modifying_files() {
-    let root = fixture("maintain");
+fn validate_reports_maintenance_diagnostics_without_modifying_files() {
+    let root = fixture("maintenance");
     write_config(&root);
     fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\n---\n[Missing](missing.md)\n")
         .expect("index should be written");
@@ -162,19 +240,19 @@ fn maintain_reports_candidates_without_modifying_files() {
     let before = fs::read(root.join("orphan.md")).expect("orphan should be readable");
 
     let output = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["maintain", "--config", root.join("growl.yml").to_str().unwrap(), "--dry-run", "--format", "json"])
+        .args(["validate", "--config", root.join("growl.yml").to_str().unwrap(), "--details"])
         .output()
-        .expect("maintain should run");
-    assert!(output.status.success());
-    let candidates: Vec<serde_json::Value> = serde_json::from_slice(&output.stdout).expect("valid JSON");
-    assert!(candidates.iter().any(|candidate| candidate["kind"] == "orphan"));
-    assert!(candidates.iter().any(|candidate| candidate["kind"] == "broken-reference"));
+        .expect("validate should run");
+    assert_eq!(output.status.code(), Some(1));
+    let output_text = String::from_utf8_lossy(&output.stdout);
+    assert!(output_text.contains("orphan-page"));
+    assert!(output_text.contains("broken-link"));
     assert_eq!(fs::read(root.join("orphan.md")).expect("orphan should be readable"), before);
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
 #[test]
-fn check_reports_orphans_and_can_filter_to_one_file() {
+fn validate_reports_orphans_and_can_filter_to_one_file() {
     let root = fixture("orphans");
     write_config(&root);
     fs::write(root.join("index.md"), "---\ntype: note\ntitle: Index\n---\n[Welcome](note.md)\n")
@@ -184,14 +262,14 @@ fn check_reports_orphans_and_can_filter_to_one_file() {
 
     let config = root.join("growl.yml");
     let all = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["check", "--config", config.to_str().unwrap()])
+        .args(["validate", "--config", config.to_str().unwrap(), "--details"])
         .output()
         .expect("check should run");
     let all_output = String::from_utf8(all.stdout).expect("human output should be utf-8");
     assert!(all_output.contains("orphan-page"));
 
     let one = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["check", "--config", config.to_str().unwrap(), "--file", "orphan.md"])
+        .args(["validate", "--config", config.to_str().unwrap(), "--file", "orphan.md", "--details"])
         .output()
         .expect("file check should run");
     let one_output = String::from_utf8(one.stdout).expect("human output should be utf-8");
@@ -207,7 +285,7 @@ fn missing_field_is_reported() {
         .expect("index should be written");
     fs::write(root.join("note.md"), "---\nid: missing-title\ntype: note\n---\n").expect("document should be written");
 
-    let output = run_check(&root, "json");
+    let output = run_validate(&root);
     assert_eq!(output.status.code(), Some(1));
     let diagnostics = String::from_utf8(output.stdout).expect("human output should be utf-8");
     assert!(diagnostics.contains("missing-required-field"));
@@ -226,7 +304,7 @@ fn duplicate_identifier_and_invalid_frontmatter_are_reported() {
         .expect("document should be written");
     fs::write(root.join("broken.md"), "---\nid: broken\ntype: [note\n---\n").expect("document should be written");
 
-    let output = run_check(&root, "json");
+    let output = run_validate(&root);
     assert_eq!(output.status.code(), Some(1));
     let diagnostics = String::from_utf8(output.stdout).expect("human output should be utf-8");
     assert!(diagnostics.contains("invalid-frontmatter"));
@@ -296,7 +374,7 @@ fn init_command_writes_default_config() {
     assert!(config.contains("\n\n# Directory structure and descriptions.\ndirectories:"));
     assert!(config.contains("\n\n# Fields required on every document.\nmandatory_fields:"));
     let mandatory_fields = config.split("mandatory_fields:").nth(1).expect("mandatory fields should be written");
-    let field_order = ["type:", "title:", "description:", "tags:", "sources:", "generated:", "stale_after:"];
+    let field_order = ["type:", "title:", "description:", "tags:", "generated:", "stale_after:"];
     let mut previous = 0;
     for field in field_order {
         let position = mandatory_fields
@@ -333,11 +411,11 @@ fn configured_root_and_nested_directories_are_supported() {
         .expect("document should be written");
 
     let output = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["check", "--config", root.join("growl.yml").to_str().expect("path should be utf-8")])
+        .args(["validate", "--config", root.join("growl.yml").to_str().expect("path should be utf-8")])
         .output()
         .expect("growl should run");
     assert!(output.status.success());
-    assert_eq!(output.stdout, b"OK: no issues found\n");
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Validation summary"));
     fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
@@ -363,7 +441,7 @@ fn config_validate_reports_invalid_rule_shapes() {
 }
 
 #[test]
-fn invalid_config_stops_check_with_configuration_exit_code() {
+fn invalid_config_stops_validate_with_configuration_exit_code() {
     let root = fixture("invalid-config-check");
     fs::write(
         root.join("growl.yml"),
@@ -371,7 +449,7 @@ fn invalid_config_stops_check_with_configuration_exit_code() {
     )
     .expect("config should be written");
 
-    let output = run_check(&root, "json");
+    let output = run_validate(&root);
     assert_eq!(output.status.code(), Some(2));
     let diagnostics = String::from_utf8(output.stdout).expect("human output should be utf-8");
     assert!(diagnostics.contains("config-values-require-string"));
@@ -379,7 +457,7 @@ fn invalid_config_stops_check_with_configuration_exit_code() {
 }
 
 #[test]
-fn check_reports_type_value_and_nested_shape_errors() {
+fn validate_reports_type_value_and_nested_shape_errors() {
     let root = fixture("value-errors");
     fs::write(
         root.join("growl.yml"),
@@ -389,7 +467,7 @@ fn check_reports_type_value_and_nested_shape_errors() {
     fs::write(root.join("index.md"), "---\ntype: note\ntags: [one, 2]\nstatus: archived\npublished: 2026-2-1\n---\n")
         .expect("index should be written");
 
-    let output = run_check(&root, "json");
+    let output = run_validate(&root);
     assert_eq!(output.status.code(), Some(1));
     let diagnostics = String::from_utf8(output.stdout).expect("human output should be utf-8");
     assert!(diagnostics.contains("invalid-field-type"));
@@ -504,14 +582,14 @@ fn generated_skills_are_english_and_contain_no_todos() {
 fn missing_config_and_missing_file_return_execution_errors() {
     let root = fixture("missing-input");
     let missing_config = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["check", "--config", root.join("missing.yml").to_str().unwrap()])
+        .args(["validate", "--config", root.join("missing.yml").to_str().unwrap()])
         .output()
         .expect("growl should run");
     assert_eq!(missing_config.status.code(), Some(2));
 
     write_config(&root);
     let missing_file = Command::new(env!("CARGO_BIN_EXE_growl"))
-        .args(["check", "--config", root.join("growl.yml").to_str().unwrap(), "--file", "missing.md"])
+        .args(["validate", "--config", root.join("growl.yml").to_str().unwrap(), "--file", "missing.md"])
         .output()
         .expect("growl should run");
     assert_eq!(missing_file.status.code(), Some(1));

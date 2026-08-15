@@ -33,4 +33,15 @@ impl Diagnostic {
     pub fn is_error(&self) -> bool {
         matches!(self.severity, Severity::Error)
     }
+
+    pub fn warning(code: &str, path: Option<String>, message: impl Into<String>) -> Self {
+        Self {
+            code: code.to_string(),
+            severity: Severity::Warning,
+            path,
+            line: None,
+            column: None,
+            message: message.into(),
+        }
+    }
 }

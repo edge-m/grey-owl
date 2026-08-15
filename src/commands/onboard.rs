@@ -23,7 +23,7 @@ After setup, ask the Agent to:\n\
 Useful commands:\n\
   growl init       Create a starter configuration\n\
   growl skill ...  Write the Agent Skills\n\
-  growl check      Validate the Wiki"
+  growl validate   Validate the Wiki"
     );
 
     Ok(0)

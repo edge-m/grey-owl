@@ -4,19 +4,38 @@ use indexmap::IndexMap;
 
 pub fn lint(config: &Config) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
-    lint_mandatory_fields("mandatory_fields", &config.mandatory_fields, &mut diagnostics);
+    lint_mandatory_fields(
+        "mandatory_fields",
+        &config.mandatory_fields,
+        config.source_tracking.enabled,
+        &mut diagnostics,
+    );
 
     for (document_type, type_config) in &config.types {
-        lint_fields(&format!("types.{document_type}.fields"), &type_config.fields, &mut diagnostics);
+        lint_fields(
+            &format!("types.{document_type}.fields"),
+            &type_config.fields,
+            config.source_tracking.enabled,
+            &mut diagnostics,
+        );
     }
 
     diagnostics
 }
 
 fn lint_mandatory_fields(
-    scope: &str, fields: &IndexMap<String, MandatoryFieldRule>, diagnostics: &mut Vec<Diagnostic>,
+    scope: &str, fields: &IndexMap<String, MandatoryFieldRule>, ignore_sources: bool,
+    diagnostics: &mut Vec<Diagnostic>,
 ) {
     for (field, rule) in fields {
+        if ignore_sources && field == "sources" {
+            diagnostics.push(Diagnostic::warning(
+                "source-definition-ignored",
+                Some(format!("{scope}.{field}")),
+                "source_tracking is enabled; the custom sources definition is ignored in favor of the standard source record",
+            ));
+            continue;
+        }
         let field_scope = format!("{scope}.{field}");
         lint_mandatory_rule(&field_scope, rule, diagnostics);
     }
@@ -27,11 +46,21 @@ fn lint_mandatory_rule(scope: &str, rule: &MandatoryFieldRule, diagnostics: &mut
     if let Some(items) = &rule.items {
         lint_mandatory_rule(&format!("{scope}.items"), items, diagnostics);
     }
-    lint_mandatory_fields(&format!("{scope}.fields"), &rule.fields, diagnostics);
+    lint_mandatory_fields(&format!("{scope}.fields"), &rule.fields, false, diagnostics);
 }
 
-fn lint_fields(scope: &str, fields: &IndexMap<String, FieldRule>, diagnostics: &mut Vec<Diagnostic>) {
+fn lint_fields(
+    scope: &str, fields: &IndexMap<String, FieldRule>, ignore_sources: bool, diagnostics: &mut Vec<Diagnostic>,
+) {
     for (field, rule) in fields {
+        if ignore_sources && field == "sources" {
+            diagnostics.push(Diagnostic::warning(
+                "source-definition-ignored",
+                Some(format!("{scope}.{field}")),
+                "source_tracking is enabled; the custom sources definition is ignored in favor of the standard source record",
+            ));
+            continue;
+        }
         let field_scope = format!("{scope}.{field}");
         lint_rule(&field_scope, rule, diagnostics);
     }
@@ -42,7 +71,7 @@ fn lint_rule(scope: &str, rule: &FieldRule, diagnostics: &mut Vec<Diagnostic>) {
     if let Some(items) = &rule.items {
         lint_rule(&format!("{scope}.items"), items, diagnostics);
     }
-    lint_fields(&format!("{scope}.fields"), &rule.fields, diagnostics);
+    lint_fields(&format!("{scope}.fields"), &rule.fields, false, diagnostics);
 }
 
 fn lint_rule_shape(

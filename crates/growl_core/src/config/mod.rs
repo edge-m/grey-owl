@@ -7,8 +7,8 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 pub use schema::{
-    ConfigLintConfig, DirectoryConfig, FieldRule, MandatoryFieldRule, TypeConfig, ValueType, WikiLintConfig,
-    matches_glob,
+    ConfigLintConfig, DirectoryConfig, FieldRule, MandatoryFieldRule, SourceTrackingConfig, TypeConfig, ValueType,
+    WikiLintConfig, matches_glob,
 };
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -30,6 +30,8 @@ pub struct Config {
     pub types: IndexMap<String, TypeConfig>,
     pub wiki_lint: WikiLintConfig,
     pub config_lint: ConfigLintConfig,
+    /// Rules for validating page references to files in the raw source tree.
+    pub source_tracking: SourceTrackingConfig,
 }
 
 /// A configuration together with the path context needed to resolve relative paths.

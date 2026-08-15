@@ -27,6 +27,15 @@ pub fn run(args: &Args) -> Result<u8, String> {
         Format::Json => {
             let value = serde_json::json!({
                 "wiki_root": context.wiki_root(),
+                "source_tracking": {
+                    "enabled": config.source_tracking.enabled,
+                    "source_item": {
+                        "required_fields": ["path", "sha256"],
+                        "optional_fields": ["origin"],
+                        "path": "wiki-root-relative path, normally under raw/",
+                        "sha256": "SHA-256 of the source file",
+                    }
+                },
                 "directories": &config.directories,
                 "types": &config.types,
                 "diagnostics": &diagnostics,

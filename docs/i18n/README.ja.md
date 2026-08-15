@@ -59,8 +59,8 @@ growl onboard
    AI Agentに渡します。
 2. 記事の追加を依頼すると、AgentがルールとWikiの状態を確認し、文書種別と配置先を
    選び、必須のYAML frontmatter付きMarkdownを作成します。
-3. Agentが`growl check --file <path>`で新しい記事を検証した後、
-   `growl check`でWiki全体を検証し、エラー、リンク切れ、孤立ページを修正します。
+3. Agentが`growl validate --file <path>`で新しい記事を検証した後、
+   `growl validate`でWiki全体を検証し、エラー、リンク切れ、孤立ページを修正します。
 
 人間は基本的にAI Agentと対話し、`growl`コマンドはAgentがWikiを調査・検証するための
 ツールとして使います。
@@ -95,10 +95,6 @@ mandatory_fields:
     type: array
     items:
       type: string
-  sources:
-    type: array
-    items:
-      type: string
   generated:
     type: object
     fields:
@@ -121,9 +117,13 @@ wiki_lint:
     - raw/**
 config_lint:
   max_nesting_depth: 1
+source_tracking:
+  enabled: true
 ```
 
-未知のfrontmatterフィールドは保持され、エラーにはなりません。ディレクトリ設定は説明専用で、ネストできます。設定したWikiルートを使う場合は`growl check --config ./growl.yml`を実行します。`--config`は設定ファイル自体のパス、`wiki_root`はその設定ファイル内で指定するWikiルートのパスです。
+`source_tracking.enabled`を有効にすると、`sources`の正式な出典レコード、原典ファイルの存在、SHA-256の変更を検証します。`path`はWikiルートからの相対パスで、`origin`は任意です。
+
+未知のfrontmatterフィールドは保持され、エラーにはなりません。ディレクトリ設定は説明専用で、ネストできます。設定したWikiルートを使う場合は`growl validate --config ./growl.yml`を実行します。`--config`は設定ファイル自体のパス、`wiki_root`はその設定ファイル内で指定するWikiルートのパスです。
 `wiki_lint.exclude`には、`wiki_root`からの相対パスで、すべてのWiki検査（frontmatter、リンク、グラフ、孤立ページ検出）から除外するMarkdownパスを指定できます。`growl init`では、ドットで始まるパス、`README.md`、`raw/**`をデフォルトで除外します。`*`、`?`、`**`が使えます。`config_lint`には設定ファイル自体を検証するための設定を記述します。配列やオブジェクトのフィールドは、それぞれ`items`や`fields`でネストして定義できます。
 `growl_version`には設定を生成した`growl`のバージョンが記録されます。`growl config validate`では、設定を生成したバージョンが現在の`growl`の互換範囲に含まれるか確認します。
 
@@ -135,17 +135,17 @@ growl onboard
 growl config validate [--config <file>]
 growl graph [--config <file>]
 growl schema [--config <file>] [--format text|json]
-growl maintain [--config <file>] [--stale-before YYYY-MM-DD] [--dry-run] [--format human|json]
 growl overview directories [--config <file>] [--statistics]
 growl overview types [--config <file>] [--statistics] [--type <type>]
 growl search [--config <file>] --query <query>
-growl check [--config <file>] [--file <path>]
+growl validate [--config <file>] [--file <path>] [--details] [--format human|json]
 growl skill <output-directory>
 ```
 
 `--config`を省略した場合、コマンドはカレントディレクトリの`growl.yml`を探し、
-そこから`wiki_root`を解決します。`--file`なしの`check`はWiki全体を検証し、
-`index.md`から到達できないページも検出します。
+そこから`wiki_root`を解決します。`--file`なしの`validate`はWiki全体を検証し、
+`index.md`から到達できないページも検出します。デフォルトではサマリだけを表示し、
+`--details`を指定すると個別の診断を表示します。
 
 `growl skill`は静的なAgent Skillを次の場所へ出力します。
 

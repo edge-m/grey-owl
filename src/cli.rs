@@ -1,6 +1,6 @@
 use clap::{CommandFactory, Parser, Subcommand};
 
-use crate::commands::{check, config, graph, init, maintain, onboard, overview, schema, search, skill};
+use crate::commands::{config, graph, init, onboard, overview, schema, search, skill, validate};
 
 #[derive(Debug, Parser)]
 #[command(name = "growl", about = "Grey Owl wiki validator")]
@@ -11,8 +11,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    #[command(about = "Validate a wiki")]
-    Check(check::Args),
+    #[command(about = "Validate the entire wiki and print a summary")]
+    Validate(validate::Args),
     #[command(subcommand, about = "Inspect wiki structure and types")]
     Overview(OverviewCommand),
     #[command(about = "Create a starter configuration")]
@@ -23,8 +23,6 @@ enum Command {
     Graph(graph::Args),
     #[command(about = "Describe the wiki schema")]
     Schema(schema::Args),
-    #[command(about = "Find maintenance candidates without changing files")]
-    Maintain(maintain::Args),
     #[command(about = "Explain how to start using Grey Owl with an Agent")]
     Onboard(onboard::Args),
     #[command(about = "Write the Grey Owl Agent Skill")]
@@ -58,14 +56,13 @@ pub fn run(args: Vec<String>) -> Result<u8, String> {
     };
 
     match cli.command {
-        Some(Command::Check(args)) => check::run(&args),
+        Some(Command::Validate(args)) => validate::run(&args),
         Some(Command::Overview(OverviewCommand::Directories(args))) => overview::directories(&args),
         Some(Command::Overview(OverviewCommand::Types(args))) => overview::types(&args),
         Some(Command::Init(args)) => init::run(&args),
         Some(Command::Config(ConfigCommand::Validate(args))) => config::validate(&args),
         Some(Command::Graph(args)) => graph::run(&args),
         Some(Command::Schema(args)) => schema::run(&args),
-        Some(Command::Maintain(args)) => maintain::run(&args),
         Some(Command::Onboard(args)) => onboard::run(&args),
         Some(Command::Skill(args)) => skill::run(&args),
         Some(Command::Search(args)) => search::run(&args),

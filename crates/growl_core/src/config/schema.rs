@@ -71,6 +71,20 @@ pub struct ConfigLintConfig {
     pub max_nesting_depth: Option<usize>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
+#[serde(deny_unknown_fields)]
+pub struct SourceTrackingConfig {
+    /// Whether formal `sources` references are validated.
+    pub enabled: bool,
+}
+
+impl Default for SourceTrackingConfig {
+    fn default() -> Self {
+        Self { enabled: true }
+    }
+}
+
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default)]
 #[serde(deny_unknown_fields)]

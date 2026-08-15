@@ -11,6 +11,6 @@ counts, relationships, and current validation state.
    `growl overview types --statistics` to collect actual page counts.
 3. Run `growl graph` to inspect links, broken references, orphan pages, and
    unreachable pages.
-4. Run `growl check` and report the current validation state.
+4. Run `growl validate` and report the current validation state.
 
 Do not infer missing configuration from directory names or page content.
