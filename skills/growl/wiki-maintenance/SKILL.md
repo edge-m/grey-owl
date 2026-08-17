@@ -1,3 +1,8 @@
+---
+name: wiki-maintenance
+description: Find and assess Grey Owl Wiki maintenance candidates such as broken links, orphan pages, unreachable pages, and stale content without changing files.
+---
+
 # Grey Owl Wiki Maintenance Skill
 
 Use this workflow to find and assess maintenance candidates without changing

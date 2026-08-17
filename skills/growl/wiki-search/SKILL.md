@@ -1,3 +1,8 @@
+---
+name: wiki-search
+description: Search Grey Owl Wiki structured metadata and relationships, then use rg for Markdown body text when needed.
+---
+
 # Grey Owl Wiki Search Skill
 
 Use this workflow to search structured wiki metadata and relationships before

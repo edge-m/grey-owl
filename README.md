@@ -177,9 +177,10 @@ prints a compact summary by default; use `--details` for individual diagnostics.
 
 ```text
 <output-directory>/growl/SKILL.md
+<output-directory>/growl/using-wiki/SKILL.md
 <output-directory>/growl/wiki-config/SKILL.md
 <output-directory>/growl/wiki-overview/SKILL.md
-<output-directory>/growl/wiki-add-article/SKILL.md
+<output-directory>/growl/wiki-ingest/SKILL.md
 <output-directory>/growl/wiki-maintenance/SKILL.md
 <output-directory>/growl/wiki-search/SKILL.md
 ```

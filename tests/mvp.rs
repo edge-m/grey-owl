@@ -323,9 +323,9 @@ fn skill_command_writes_skill_file() {
     let skill_path = root.join("growl/SKILL.md");
     let skill = fs::read_to_string(&skill_path).expect("skill should be written");
     assert!(skill.contains("# Grey Owl Wiki Skills"));
+    assert!(root.join("growl/using-wiki/SKILL.md").is_file());
     assert!(root.join("growl/wiki-overview/SKILL.md").is_file());
     assert!(root.join("growl/wiki-config/SKILL.md").is_file());
-    assert!(root.join("growl/wiki-add-article/SKILL.md").is_file());
     assert!(root.join("growl/wiki-maintenance/SKILL.md").is_file());
     assert!(root.join("growl/wiki-search/SKILL.md").is_file());
     fs::remove_dir_all(root).expect("fixture should be removed");
@@ -564,9 +564,10 @@ fn generated_skills_are_english_and_contain_no_todos() {
     assert!(output.status.success());
     for path in [
         "growl/SKILL.md",
+        "growl/using-wiki/SKILL.md",
         "growl/wiki-config/SKILL.md",
         "growl/wiki-overview/SKILL.md",
-        "growl/wiki-add-article/SKILL.md",
+        "growl/wiki-ingest/SKILL.md",
         "growl/wiki-maintenance/SKILL.md",
         "growl/wiki-search/SKILL.md",
     ] {
@@ -574,6 +575,7 @@ fn generated_skills_are_english_and_contain_no_todos() {
         assert!(!content.contains("TODO"), "{path} should not contain TODO");
         assert!(!content.contains("です"), "{path} should be English");
         assert!(content.contains("Workflow") || path == "growl/SKILL.md");
+        assert!(content.starts_with("---\nname: "), "{path} should have Agent Skills frontmatter");
     }
     fs::remove_dir_all(root).expect("fixture should be removed");
 }

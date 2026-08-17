@@ -1,3 +1,8 @@
+---
+name: wiki-overview
+description: Inspect a Grey Owl Wiki's structure, document types, page counts, relationships, and current validation state.
+---
+
 # Grey Owl Wiki Overview Skill
 
 Use this workflow to understand the wiki structure, document types, page
